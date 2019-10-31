@@ -45,7 +45,7 @@ unsigned int base64_encode(unsigned char *output_string, unsigned char *input_da
                 current_output_sextets[3] = current_input_bytes[2] & 0x3F;
 
                 output_buffer = calloc(5, 1);
-                unsigned int output_index;
+                size_t output_index;
                 for(output_index = 0; output_index < 4; output_index++){
                         output_buffer[output_index] = base64_table[current_output_sextets[output_index]];
                 }
@@ -53,7 +53,7 @@ unsigned int base64_encode(unsigned char *output_string, unsigned char *input_da
         }
 
         //Go from len-(1+num_padding) to the end, replacing with =
-        for(unsigned int padding_check_index = strlen(base64_encoded_string) - num_padding; padding_check_index < strlen(base64_encoded_string); padding_check_index++){
+        for(size_t padding_check_index = strlen(base64_encoded_string) - num_padding; padding_check_index < strlen(base64_encoded_string); padding_check_index++){
                 strncpy(base64_encoded_string + padding_check_index, "=", 1);
         }
 
@@ -105,7 +105,6 @@ unsigned int base64_decode(unsigned char *output_data, unsigned char *input_stri
 			
 		}
 		
-		//bit shifting fun
 		//byte 0 = (sextet 0 << 2) + (top 2 bits of sextet 1 >> 4)
 		current_output_bytes[0] = ((current_input_sextets[0] << 2) & 0xFC) + ((current_input_sextets[1] >> 4) & 0x03);
 		//byte 1 = (bottom 4 bits of sextet 1 << 4) + (top 4 bits of sextet 2 >> 2)
