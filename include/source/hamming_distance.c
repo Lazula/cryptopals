@@ -6,14 +6,14 @@
  * This can be easily calculated using XOR on each index and counting the '1' bits (use the example above to try it out yourself - 1100 ^ 1011 = 0111 -> 3)
  * A longer example: 11000100 ^ 10101110 = 01101010 -> 4
  */
-unsigned int hamming_distance(unsigned char *string1, unsigned char *string2){
+unsigned int hamming_distance(unsigned char *data1, unsigned char *data2, size_t input_size){
 	unsigned int distance = 0;
 	unsigned char current_byte;
-	size_t i, j, length = strlen(string1);
 	
-	for(i = 0; i < length; i++){
+	size_t i;
+	for(i = 0; i < input_size; i++){
 		//check lowest bit and then shift
-		for(current_byte = string1[i] ^ string2[i]; current_byte > 0; current_byte >> 1){
+		for(current_byte = data1[i] ^ data2[i]; current_byte > 0; current_byte /= 2){
 			if(current_byte & 1) distance++;
 		}
 	}
