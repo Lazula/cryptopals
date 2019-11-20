@@ -4,8 +4,8 @@
 
 #include "../frequency_analysis.h"
 
-//This function does not exist yet. It may be added or removed at a later date if the fast version is found to be sufficient.
-/*
+/* This function does not exist yet. It may be added or removed at a later date if the fast version is found to be sufficient.
+ *
  * Calls the fast version for a baseline score
  * Also scans a dictionary of given words (1 per line) and cuts the score in half if less than 3 words in the dictionary exist in the text
  * This is a good heuristic to avoid blocks of random text that happen to have a good frequency distribution
@@ -47,7 +47,8 @@ unsigned int analyze_english_plaintext_viability(unsigned char *plaintext, unsig
  * While frequencies of 0 are never counted, "asdf"
  * plaintext MUST be a valid string; This function is NOT binary safe - providing binary data causes undefined behavior.
  */
-
+//TODO update frequency_count and frequency_count_ordered_by_expected to be arrays of integers instead of bytes
+//Maybe use a struct? Experiment with it.
 unsigned int analyze_english_plaintext_viability_fast(unsigned char *plaintext){
 	unsigned char *frequency_chart_reference = "abcdefghijklmnopqrstuvwxyz";
 	unsigned char *expected_frequency_chart = "etaoinshrdlcumwfgypbvkjxqz";
@@ -60,13 +61,15 @@ unsigned int analyze_english_plaintext_viability_fast(unsigned char *plaintext){
 	size_t i;
 	for(i = 0; i < strlen(plaintext); i++){
 		current_char = tolower(plaintext[i]);
+		//skip non-alpha chars
 		if(strchr(frequency_chart_reference, current_char) == (char *) NULL){
 			continue;
 		}
-		frequency_count[i]++;
+		frequency_count[current_char-97]++;
 	}
 	
 	for(i = 0; i < 26; i++){
+		//Get the current char, starting with e
 		current_char = expected_frequency_chart[i];
 		//0 -> e -> 4, 1 -> t -> 19
 		frequency_count_ordered_by_expected[i] = frequency_count[current_char-97];
@@ -103,5 +106,5 @@ unsigned int analyze_english_plaintext_viability_fast(unsigned char *plaintext){
 	free(frequency_count);
 	free(frequency_count_ordered_by_expected);
 	
-	return (int) score;	
+	return (int) score;
 }
