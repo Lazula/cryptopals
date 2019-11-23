@@ -3,6 +3,6 @@
 
 #include <stddef.h>
 
-unsigned int decrypt_single_byte_xor(unsigned char *output,  unsigned char *output_key, unsigned char *input_data, size_t input_size);
+double decrypt_single_byte_xor(unsigned char *output,  unsigned char *output_key, unsigned char *input_data, size_t input_size);
 
 #endif

@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <float.h>
 
 #include "../repeating_key_xor.h"
 #include "../frequency_analysis.h"
@@ -13,11 +14,11 @@
  * return value is the viability score given to the output.
  * This function IS binary safe on input.
  */
-unsigned int decrypt_single_byte_xor(unsigned char *output,  unsigned char *output_key, unsigned char *input_data, size_t input_size){
+double decrypt_single_byte_xor(unsigned char *output,  unsigned char *output_key, unsigned char *input_data, size_t input_size){
 	size_t decrypted_string_size = input_size+1;
 	unsigned char *decrypted_string = calloc(decrypted_string_size, 1);
-	unsigned char current_key, best_key = 0, valid_ascii;
-	unsigned int current_key_score, best_key_score = 0;
+	unsigned char current_key = 0, best_key = 0, valid_ascii;
+	double current_key_score, best_key_score = DBL_MAX;
 	
 	do{
 		valid_ascii = 1;
@@ -25,20 +26,19 @@ unsigned int decrypt_single_byte_xor(unsigned char *output,  unsigned char *outp
 		repeating_key_xor(decrypted_string, input_data, input_size, &current_key, 1);
 		size_t i;
 		for(i = 0; i < input_size; i++){
-			//any non-ascii character
-			//if(decrypted_string[i] < 1 || decrypted_string[i] > 126){
-			if(decrypted_string[i] < 32 || decrypted_string[i] > 126){
+			//throw out any non-ASCII chars
+			if(decrypted_string[i] < 1 || decrypted_string[i] > 126){
 				valid_ascii = 0;
 				break;
 			}
 		}
 		
 		if(valid_ascii){
-			current_key_score = analyze_english_plaintext_viability_fast(decrypted_string);
-			if(current_key_score > best_key_score){
+			current_key_score = analyze_english_plaintext_viability(decrypted_string);
+			if(current_key_score < best_key_score){
 				best_key_score = current_key_score;
 				best_key = current_key;
-				//printf("new best score %d for key %#02x with output text %s\n", best_key_score, best_key, decrypted_string);
+				//printf("new best score %lf for key %#02x with output text %s\n", best_key_score, best_key, decrypted_string);
 			}
 		}
 	}while(current_key < 255);
@@ -50,7 +50,7 @@ unsigned int decrypt_single_byte_xor(unsigned char *output,  unsigned char *outp
 		if(strlen(decrypted_string) < input_size){
 			memset(output, 0, decrypted_string_size);
 		}else{
-			strncpy(output, decrypted_string, input_size);
+			strncpy(output, decrypted_string, decrypted_string_size);
 		}
 	}
 	
