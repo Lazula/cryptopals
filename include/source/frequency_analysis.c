@@ -5,32 +5,40 @@
 
 #include "../frequency_analysis.h"
 
-//A through Z in order
-static double expected_frequencies[26] = {0.08167, 0.01492, 0.02782, 0.04253, 0.12702, 0.02228, 0.02015, 0.06094, 0.06966, 0.00153, 0.00772, 0.04025, 0.02406, 0.06749, 0.07507, 0.01929, 0.00095, 0.05987, 0.06327, 0.09056, 0.02758, 0.00978, 0.02360, 0.00150, 0.01974, 0.00074};
+//A through Z in order, then space
+static double expected_frequencies[27] = {0.0651738, 0.0124248, 0.0217339, 0.0349835, 0.1041442, 0.0197881, 0.0158610, 0.0492888, 0.0558094, 0.0009033, 0.0050529, 0.0331490, 0.0202124, 0.0564513, 0.0596302, 0.0137645, 0.0008606, 0.0497563, 0.0515760, 0.0729357, 0.0225134, 0.0082903, 0.0171272, 0.0013692, 0.0145984, 0.0007836, 0.1918182};
 
 /* 
  * Old method was too unreliable and beyond repair without some kind of overall analysis instead of looking only at individual cases.
  * We now take into account every case with appropraite weight.
  * Under the hood the test is still comparing expected to actual results, but in a more sophisticated and accurate way than my prior crude approximations.
  * Smaller values are a closer match.
- * This function expects valid ASCII data. It is NOT binary safe.
+ * This function is binary safe - any unprintable characters cause a return value of DBL_MAX, the lowest possible priority.
  */
-double analyze_english_plaintext_viability(char *text){
-	double *actual_frequencies = malloc(26*sizeof(double));
+double analyze_english_plaintext_viability(unsigned char *text){
+	double *actual_frequencies = malloc(27*sizeof(double));
 	unsigned int ignored = 0;
 	
 	size_t i;
-	for(i = 0; i < 26; i++) actual_frequencies[i] = 0;
+	for(i = 0; i < 27; i++) actual_frequencies[i] = 0;
 	
 	unsigned char current_char;
 	for(i = 0; i < strlen(text); i++){
-		current_char = tolower(text[i]);
-		if(current_char >= 97 && current_char <= 122){
-			//Letters already converted to lowercase
+		current_char = text[i];
+		if(current_char >= 65 && current_char <= 90){
+			//Lower case
+			actual_frequencies[current_char - 65]++;
+		}else if(current_char >= 97 && current_char <= 122){
+			//Upper case
 			actual_frequencies[current_char - 97]++;
 		}else if(current_char >= 32 && current_char <= 126){
-			//Numbers and punctuation
-			ignored++;
+			if(current_char == 32){
+				//space
+				actual_frequencies[26]++;
+			}else{
+				//Numbers and punctuation
+				ignored++;
+			}
 		}else if(current_char == '\t' || current_char == '\n'){
 			//Whitespace
 			//Can include '\r' for CRLF, but causes problems for LF text. Reject it, at least for now.
@@ -41,16 +49,57 @@ double analyze_english_plaintext_viability(char *text){
 		}
 	}
 	
-	double chi_squared = 0, observed, expected, difference;
-	unsigned long hits = strlen(text) - ignored;
-	for(i = 0; i < 26; i++){
+	double chi_squared = 0, observed, expected, difference, diff_squared;
+	unsigned long length = strlen(text) - ignored;
+	for(i = 0; i < 27; i++){
 		observed = actual_frequencies[i];
-		expected = hits * expected_frequencies[i];
+		expected = length * expected_frequencies[i];
 		difference = observed - expected;
-		//printf("Adding %lf to chi2 with O=%lf E=%lf D=%lf\n", (difference*difference) / expected, observed, expected, difference);
-		chi_squared += (difference*difference) / expected;
+		diff_squared = difference*difference;
+		//printf("Adding %lf to chi2 with O=%lf E=%lf D^2=%lf c=%c\n", diff_squared / expected, observed, expected, diff_squared, i+97);
+		chi_squared += diff_squared / expected;
 	}
 	
-	free(actual_frequencies);	
+	free(actual_frequencies);
+	
 	return chi_squared;
+}
+
+/* 
+ * This function does not use chi-squared. Instead, the frequency of each letter is added up and used raw.
+ * The final answer is subtracted from DBL_MAX to maintain easy interoperability with current code and the real version, i.e. lower score is better
+ * This function is binary safe - any unprintable characters cause a return value of 0, the lowest possible priority.
+ */
+double analyze_english_plaintext_viability_fast(unsigned char *text){
+	double *actual_frequencies = malloc(27*sizeof(double));
+	
+	size_t i;
+	for(i = 0; i < 27; i++) actual_frequencies[i] = 0;
+	
+	unsigned char current_char;
+	for(i = 0; i < strlen(text); i++){
+		current_char = text[i];
+		if(current_char >= 65 && current_char <= 90){
+			//Lower case
+			actual_frequencies[current_char - 65]++;
+		}else if(current_char >= 97 && current_char <= 122){
+			//Upper case
+			actual_frequencies[current_char - 97]++;
+		}else if(current_char == 32){
+			//space
+			actual_frequencies[26]++;
+		}else if(current_char != '\t' && current_char != '\n'){
+			//Contains unprintable characters. Abort with lowest possible priority.
+			return 0;
+		}
+	}
+	
+	double total_score = 0;
+	for(i = 0; i < 27; i++){
+		//use the expected frequencies as a simple scoring system
+		total_score += actual_frequencies[i] * expected_frequencies[i];
+	}
+	
+	free(actual_frequencies);
+	return total_score;
 }

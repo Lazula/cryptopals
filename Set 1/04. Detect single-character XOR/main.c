@@ -1,10 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <float.h>
 
 #include "../../include/hex_encoding.h"
-#include "../../include/repeating_key_xor.h"
-#include "../../include/frequency_analysis.h"
 #include "../../include/decrypt_single_byte_xor.h"
 
 int main(int argc, char *argv[]){
@@ -19,7 +18,8 @@ int main(int argc, char *argv[]){
 	
 	size_t decrypted_data_size = raw_data_size+1;
 	unsigned char *decrypted_data = calloc(decrypted_data_size, 1), *best_answer = calloc(decrypted_data_size, 1), *best_answer_hex = calloc(data_buffer_size, 1), *output_key = calloc(1, 1);
-	unsigned int current_output_score, best_output_score = 0, line_number = 0, answer_line_number = 0;
+	unsigned int line_number = 0, answer_line_number = 0;
+	double current_output_score, best_output_score = 0;
 	unsigned char current_best_key;
 	while(getline((char **) &hex_encoded_data, &data_buffer_size, data_file) != -1){
 		line_number++;
@@ -32,7 +32,7 @@ int main(int argc, char *argv[]){
 		//Decode the string
 		hex_decode(raw_data, hex_encoded_data);
 		
-		current_output_score = decrypt_single_byte_xor(decrypted_data, output_key, raw_data, raw_data_size);
+		current_output_score = decrypt_single_byte_xor_fast(decrypted_data, output_key, raw_data, raw_data_size);
 		
 		if(current_output_score > best_output_score){
 			best_output_score = current_output_score;
@@ -40,11 +40,14 @@ int main(int argc, char *argv[]){
 			answer_line_number = line_number;
 			strncpy(best_answer, decrypted_data, decrypted_data_size);
 			strncpy(best_answer_hex, hex_encoded_data, data_buffer_size);
+			printf("new best key %#02x with score %lf with text \"%s\"\n", current_best_key, best_output_score, decrypted_data);
 		}
 	}
 	
 	fclose(data_file);
 	
+	//Currently gets the wrong answer due to a "j" which causes a high difference
+	//Best fix is likely another partial rewrite to include punctuation, currently under construction.
 	printf("Best answer \"%s\" found on line %d from hex-encoded data \"%s\" with key %#02x\n", best_answer, answer_line_number, best_answer_hex, current_best_key);
 	
 	

@@ -14,13 +14,17 @@ int main(int argc, char *argv[]){
 	//input_buffer accepts up to 1MB-1 with lines up to the same length
 	size_t input_buffer_size = 1048576;
 	size_t line_buffer_size = input_buffer_size;
-	unsigned char *input_buffer = calloc(input_buffer_size, 1), *line_buffer = calloc(line_buffer_size, 1), *linebreak, *raw_encrypted_data;
+	char *input_buffer = calloc(input_buffer_size, 1), *line_buffer = calloc(line_buffer_size, 1), *linebreak, *raw_encrypted_data;
 	
 	data_file = fopen("data.txt", "r");
 	
-	while(getdelim((char **)&line_buffer, &line_buffer_size, '\n', data_file) > -1){
+	while(getdelim(&line_buffer, &line_buffer_size, '\n', data_file) > -1){
 		linebreak = strchr(line_buffer, '\n');
 		if(linebreak != NULL) *linebreak = '\0';
+		if(strlen(input_buffer) + strlen(line_buffer) > input_buffer_size){
+			printf("Input length too is greater than maximum size %zu\n", input_buffer_size);
+			exit(EXIT_FAILURE);
+		}
 		strncat(input_buffer, line_buffer, line_buffer_size);
 	}
 	free(line_buffer);
@@ -38,7 +42,7 @@ int main(int argc, char *argv[]){
 	size_t keysize, found_keysize, trials;
 	unsigned int total_edit_distance;
 	double average_edit_distance, best_edit_distance = DBL_MAX;
-	unsigned char *byteset_one, *byteset_two;
+	char *byteset_one, *byteset_two;
 	
 	for(keysize = 2; keysize <= 40; keysize++){
 		total_edit_distance = 0;
@@ -65,28 +69,31 @@ int main(int argc, char *argv[]){
 		free(byteset_two);
 	}
 	
-	printf("Most likely key length: %lu, with normalized edit distance of %lf.\nblocks to decrypt are %lu bytes long.\n", found_keysize, best_edit_distance, raw_data_size / found_keysize);
+	//printf("Most likely key length: %lu, with normalized edit distance of %lf.\nblocks to decrypt are %lu bytes long.\n", found_keysize, best_edit_distance, raw_data_size / found_keysize);
 	
 	size_t byteset_size = raw_data_size / found_keysize;
-	unsigned char *current_byteset = calloc(byteset_size, 1), *current_output = calloc(byteset_size+1, 1), *key = calloc(found_keysize+1, 1);
+	char *current_byteset = calloc(byteset_size, 1), *current_output = calloc(byteset_size+1, 1), *key = calloc(found_keysize, 1);
 	unsigned char current_key_byte = 0;
-	printf("raw_encrypted_data@ %p - %p\n", raw_encrypted_data, raw_encrypted_data+raw_data_size);
-	printf("current_byteset@ %p - %p\n", current_byteset, current_byteset+byteset_size);
-	printf("current_output@ %p - %p\n", current_output, current_output+byteset_size+1);
 	size_t i, j;
 	for(i = 0; i < found_keysize; i++){
-		printf("Working on set %lu\n", i);
+		//printf("Working on set %lu\n", i);
 		//reset memory
 		memset(current_byteset, byteset_size, 0);
 		for(j = 0; j < byteset_size; j++){
 			memcpy(current_byteset+j, raw_encrypted_data+((found_keysize*j)+i), 1);
 		}
 		decrypt_single_byte_xor(current_output, &current_key_byte, current_byteset, byteset_size);
-		printf("current_output: %s\n", current_output);
-		printf("current_key_byte: %#02hhx\n", current_key_byte);
+		//printf("current_output: %s\n", current_output);
+		//printf("current_key_byte: %#02hhx\n", current_key_byte);
 		key[i] = current_key_byte;
 	}
 	
+	char *decrypted_string = calloc(raw_data_size+1, 1);
+	repeating_key_xor(decrypted_string, raw_encrypted_data, raw_data_size, key, found_keysize);
+	
+	printf("%s\n", decrypted_string);
+	
+	free(decrypted_string);
 	free(current_byteset);
 	free(current_output);
 	free(key);

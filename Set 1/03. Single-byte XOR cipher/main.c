@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <float.h>
 
 #include "../../include/hex_encoding.h"
 #include "../../include/repeating_key_xor.h"
@@ -26,7 +27,7 @@ int main(int argc, char *argv[]){
 	size_t decrypted_string_size = raw_data_size+1;
 	unsigned char *decrypted_string = calloc(raw_data_size, 1);
 	unsigned char current_key = 0, best_key, valid_ascii;
-	unsigned int current_key_score, best_key_score = 0;
+	double current_key_score, best_key_score = DBL_MAX;
 	
 	do{
 		valid_ascii = 1;
@@ -42,8 +43,8 @@ int main(int argc, char *argv[]){
 		}
 		
 		if(valid_ascii){
-			current_key_score = analyze_english_plaintext_viability_fast(decrypted_string);
-			if(current_key_score > best_key_score){
+			current_key_score = analyze_english_plaintext_viability(decrypted_string);
+			if(current_key_score < best_key_score){
 				best_key_score = current_key_score;
 				best_key = current_key;
 			}
