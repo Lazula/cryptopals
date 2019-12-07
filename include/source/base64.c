@@ -65,9 +65,10 @@ unsigned int base64_encode(unsigned char *output_string, unsigned char *input_da
 
 /*
  * this does not suppport unpadded base64
- * output_data size is 3(n - padding)/4, so make sure you give it enough space
+ * Pass an uninitialized pointer or you will leak memory.
+ * Returns output data size (does not include null byte)
  */
-unsigned int base64_decode(unsigned char *output_data, unsigned char *input_string){
+unsigned int base64_decode(unsigned char **output_data, unsigned char *input_string){
         const char *base64_table = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 	
 	unsigned char *current_input_chars = calloc(5, 1), *current_input_sextets = calloc(5, 1), *current_output_bytes = calloc(3, 1), *output_buffer, base64index;
@@ -78,7 +79,7 @@ unsigned int base64_decode(unsigned char *output_data, unsigned char *input_stri
 	
 	unsigned int num_padding = strlen(first_pad);
 	size_t input_size = strlen(input_string) - num_padding;
-	size_t output_data_size = ((input_size * 3) / 4) + 1;
+	size_t output_data_size = ((input_size * 3) / 4);
 	output_buffer = calloc(output_data_size, 1);
 	size_t index, output_index = 0, j;
 	
@@ -117,9 +118,12 @@ unsigned int base64_decode(unsigned char *output_data, unsigned char *input_stri
 		output_index += 3;
 	}
 	
-	memcpy(output_data, output_buffer, output_data_size);
+	*output_data = calloc(output_data_size, 1);
+	memcpy(*output_data, output_buffer, output_data_size);
 	
+	free(current_input_sextets);
+	free(current_output_bytes);
 	free(current_input_chars);
 	free(output_buffer);
-	return 0;
+	return output_data_size;
 }
