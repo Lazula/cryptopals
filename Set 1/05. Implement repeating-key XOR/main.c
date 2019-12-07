@@ -32,10 +32,7 @@ int main(int argc, char *argv[]){
 	
 	repeating_key_xor(encrypted_data, input_buffer, input_string_length, key, key_size);
 	
-	hex_encoded_output_size = (input_string_length*2)+1;
-	hex_encoded_encrypted_data = calloc(hex_encoded_output_size, 1);
-	
-	hex_encode(hex_encoded_encrypted_data, encrypted_data, input_string_length);
+	hex_encoded_output_size = hex_encode(&hex_encoded_encrypted_data, encrypted_data, input_string_length);
 	
 	printf("%s\n", hex_encoded_encrypted_data);
 	

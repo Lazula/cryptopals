@@ -26,13 +26,9 @@ int main(int argc, char *argv[]){
 		char *linebreak = strchr(hex_encoded_data, '\n');
 		if(linebreak != NULL) memset(linebreak, 0, 1);
 		
-		//update size
-		raw_data_size = (strlen(hex_encoded_data)-1)/2;
+		raw_data_size = hex_decode(&raw_data, hex_encoded_data);
 		
-		//Decode the string
-		hex_decode(raw_data, hex_encoded_data);
-		
-		current_output_score = decrypt_single_byte_xor_fast(decrypted_data, output_key, raw_data, raw_data_size);
+		current_output_score = decrypt_single_byte_xor_fast(decrypted_data, output_key, raw_data, raw_data_size-1);
 		
 		if(current_output_score > best_output_score){
 			best_output_score = current_output_score;
@@ -42,6 +38,8 @@ int main(int argc, char *argv[]){
 			strncpy(best_answer_hex, hex_encoded_data, data_buffer_size);
 			printf("new best key %#02x with score %lf with text \"%s\"\n", current_best_key, best_output_score, decrypted_data);
 		}
+		
+		free(raw_data);
 	}
 	
 	fclose(data_file);
@@ -53,7 +51,6 @@ int main(int argc, char *argv[]){
 	
 	free(hex_encoded_data);
 	free(decrypted_data);
-	free(raw_data);
 	free(best_answer);
 	free(best_answer_hex);
 }

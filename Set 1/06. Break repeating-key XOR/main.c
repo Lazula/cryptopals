@@ -14,11 +14,11 @@ int main(int argc, char *argv[]){
 	//input_buffer accepts up to 1MB-1 with lines up to the same length
 	size_t input_buffer_size = 1048576;
 	size_t line_buffer_size = input_buffer_size;
-	char *input_buffer = calloc(input_buffer_size, 1), *line_buffer = calloc(line_buffer_size, 1), *linebreak, *raw_encrypted_data;
+	unsigned char *input_buffer = calloc(input_buffer_size, 1), *line_buffer = calloc(line_buffer_size, 1), *linebreak, *raw_encrypted_data;
 	
 	data_file = fopen("data.txt", "r");
 	
-	while(getdelim(&line_buffer, &line_buffer_size, '\n', data_file) > -1){
+	while(getdelim((char **) &line_buffer, &line_buffer_size, '\n', data_file) > -1){
 		linebreak = strchr(line_buffer, '\n');
 		if(linebreak != NULL) *linebreak = '\0';
 		if(strlen(input_buffer) + strlen(line_buffer) > input_buffer_size){
@@ -32,10 +32,7 @@ int main(int argc, char *argv[]){
 	
 	//input_buffer is now a single block of b64-encoded data
 	
-	size_t raw_data_size = ((strlen(input_buffer) * 3) / 4) + 1;
-	raw_encrypted_data = calloc(raw_data_size, 1);
-	
-	base64_decode(raw_encrypted_data, input_buffer);
+	size_t raw_data_size = base64_decode(&raw_encrypted_data, input_buffer);
 	
 	free(input_buffer);
 	
@@ -91,7 +88,7 @@ int main(int argc, char *argv[]){
 	char *decrypted_string = calloc(raw_data_size+1, 1);
 	repeating_key_xor(decrypted_string, raw_encrypted_data, raw_data_size, key, found_keysize);
 	
-	printf("%s\n", decrypted_string);
+	printf("%s", decrypted_string);
 	
 	free(decrypted_string);
 	free(current_byteset);

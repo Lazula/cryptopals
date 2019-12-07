@@ -19,10 +19,7 @@ int main(int argc, char *argv[]){
 	char *linebreak = strchr(hex_encoded_data, '\n');
 	if(linebreak != NULL) memset(linebreak, 0, 1);
 	
-	size_t raw_data_size = (data_buffer_size-2)/2;
-	raw_data = calloc(raw_data_size, 1);
-	
-	hex_decode(raw_data, hex_encoded_data);
+	size_t raw_data_size = hex_decode(&raw_data, hex_encoded_data);
 	
 	size_t decrypted_string_size = raw_data_size+1;
 	unsigned char *decrypted_string = calloc(raw_data_size, 1);
