@@ -1,2 +1,4 @@
 .*
 !.gitignore
+
+peda-session-*
