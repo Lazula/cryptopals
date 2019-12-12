@@ -1,5 +1,10 @@
-//Reference used: https://csrc.nist.gov/csrc/media/publications/fips/197/final/documents/fips-197.pdf
-
+/*
+ * Reference used:
+ * ECB Mode
+ * https://csrc.nist.gov/csrc/media/publications/fips/197/final/documents/fips-197.pdf
+ * CBC Mode
+ * https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-38a.pdf
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -87,40 +92,32 @@ static const uint32_t round_constants[10] = {
 /*
  * Automatically allocates *output for the corrent size.
  */
-unsigned int aes_encrypt(unsigned char **output, unsigned char *input, size_t input_size, unsigned char *key, uint8_t cipher_type, uint8_t key_type){
-	size_t padding_amount = 16 - (input_size % 16);
-	if(padding_amount == 16) padding_amount = 0;
-	size_t new_input_size = input_size + padding_amount;
-	uint8_t *new_input = calloc(new_input_size, sizeof(uint8_t));
-	uint8_t *ciphertext = calloc(new_input_size, sizeof(uint8_t));
-	*output = calloc(new_input_size, sizeof(unsigned char));
+size_t aes_encrypt(unsigned char **output, unsigned char *input, size_t input_size, unsigned char *key, unsigned char *initialization_vector, uint8_t cipher_type, uint8_t key_type){
+	uint8_t *padded_input = NULL;
+	size_t padded_input_size = pkcs7_pad(&padded_input, input, input_size, 16);
+	uint8_t *ciphertext = malloc(padded_input_size);
+	*output = malloc(padded_input_size);
+
+	size_t output_size = padded_input_size;
 	
-	//Copy all input data into the new buffer...
-	memcpy(new_input, input, input_size);
-	//...and add padding bytes with the value of the padding size, if applicable.
-	if(padding_amount > 0){
-		memset(new_input+input_size, padding_amount, padding_amount);
-	}
-	
-	struct aes_state *state = calloc(1, sizeof(struct aes_state));
+	struct aes_state *state = malloc(sizeof(struct aes_state));
 	state -> key_type = key_type;
 	state -> cipher_type = cipher_type;
 	
-	if(cipher_type != AES_CIPHER_ECB){
-		fprintf(stderr, "Non-ECB modes are not currently supported.\n  @ %s on line %d of file %s\n", __func__, __LINE__, __FILE__);
-		return 1;
+	struct aes_state *prev_state = NULL;
+	if(cipher_type == AES_CIPHER_CBC){
+		prev_state = malloc(sizeof(struct aes_state));
 	}
 	
 	struct aes_key *key_schedule[15];
 	for(uint8_t i = 0; i < 15; i++){
-		key_schedule[i] = calloc(1, sizeof(struct aes_key));
+		key_schedule[i] = malloc(sizeof(struct aes_key));
 	}
 	
 	expand_key(key_schedule, state -> key_type, key);
 	
-	for(size_t state_index = 0; state_index < new_input_size; state_index += 16){
-		//memcpy(&(state -> bytes[0][0]), new_input+state_index, 16);
-		uint8_t *input_ptr = (uint8_t *)(new_input+state_index);
+	for(size_t state_index = 0; state_index < padded_input_size; state_index += 16){
+		uint8_t *input_ptr = (uint8_t *)(padded_input+state_index);
 		for(uint8_t i = 0; i < 4; i++){
 			for(uint8_t j = 0; j < 4; j++){
 				/*
@@ -134,7 +131,28 @@ unsigned int aes_encrypt(unsigned char **output, unsigned char *input, size_t in
 				state -> bytes[i][j] = *(input_ptr+(j*4)+i);
 			}
 		}
+		
+		if(cipher_type == AES_CIPHER_CBC){
+			if(state_index == 0){
+				/* Apply IV */
+				for(uint8_t i = 0; i < 4; i++){
+					for(uint8_t j = 0; j < 4; j++){
+						state -> bytes[i][j] ^= *(initialization_vector+(j*4)+i);
+					}
+				}
+			}else{
+				/* Apply previous ciphertext block */
+				for(uint8_t i = 0; i < 4; i++){
+					for(uint8_t j = 0; j < 4; j++){
+						state -> bytes[i][j] ^= prev_state -> bytes[i][j];
+					}
+				}
+			}
+		}
+		
 		cipher(state, key_schedule);
+		memcpy(prev_state, state, sizeof(struct aes_state));
+		
 		uint8_t *output_ptr = (uint8_t *)((*output)+state_index);
 		for(uint8_t i = 0; i < 4; i++){
 			for(uint8_t j = 0; j < 4; j++){
@@ -143,11 +161,13 @@ unsigned int aes_encrypt(unsigned char **output, unsigned char *input, size_t in
 		}
 	}
 	
+	if(cipher_type == AES_CIPHER_CBC) free(prev_state);	
 	for(uint8_t i = 0; i < 15; i++){ free(key_schedule[i]); }
 	free(state);
-	free(new_input);
 	free(ciphertext);
-	return 0;
+	free(padded_input);
+	
+	return output_size;
 }
 
 //Instead of using input and output, operate directly on given state
@@ -203,22 +223,22 @@ void cipher(struct aes_state *state, struct aes_key *key_schedule[15]){
 	//dump_state(state);
 }
 
-unsigned int aes_decrypt(unsigned char **output, unsigned char *input, size_t input_size, unsigned char *key, uint8_t cipher_type, uint8_t key_type){
-	size_t output_size = input_size;
-	uint8_t *cleartext = calloc(output_size, sizeof(uint8_t));
+size_t aes_decrypt(unsigned char **output, unsigned char *input, size_t input_size, unsigned char *key, unsigned char *initialization_vector, uint8_t cipher_type, uint8_t key_type){
+	uint8_t *cleartext = malloc(input_size);
 	
-	struct aes_state *state = calloc(1, sizeof(struct aes_state));
+	struct aes_state *state = malloc(sizeof(struct aes_state));
 	state -> key_type = key_type;
 	state -> cipher_type = cipher_type;
 	
-	if(cipher_type != AES_CIPHER_ECB){
-		fprintf(stderr, "Non-ECB modes are not currently supported.\n  @ %s on line %d of file %s\n", __func__, __LINE__, __FILE__);
-		return 1;
+	struct aes_state *prev_state = NULL, *temp_state = NULL;
+	if(cipher_type == AES_CIPHER_CBC){
+		prev_state = malloc(sizeof(struct aes_state));
+		temp_state = malloc(sizeof(struct aes_state));
 	}
 	
 	struct aes_key *key_schedule[15];
 	for(uint8_t i = 0; i < 15; i++){
-		key_schedule[i] = calloc(1, sizeof(struct aes_key));
+		key_schedule[i] = malloc(sizeof(struct aes_key));
 	}
 	
 	expand_key(key_schedule, state -> key_type, key);
@@ -230,43 +250,54 @@ unsigned int aes_decrypt(unsigned char **output, unsigned char *input, size_t in
 				state -> bytes[i][j] = *(input_ptr+(j*4)+i);
 			}
 		}
+		
+		if(cipher_type == AES_CIPHER_CBC){
+			memcpy(temp_state, state, sizeof(struct aes_state));
+		}
+		
 		inv_cipher(state, key_schedule);
-		uint8_t *output_ptr = (uint8_t *)((cleartext)+state_index);
+		
+		if(cipher_type == AES_CIPHER_CBC){
+			if(state_index == 0){
+				/* Apply IV */
+				for(uint8_t i = 0; i < 4; i++){
+					for(uint8_t j = 0; j < 4; j++){
+						state -> bytes[i][j] ^= *(initialization_vector+(j*4)+i);
+					}
+				}
+			}else{
+				/* Apply previous ciphertext block */
+				for(uint8_t i = 0; i < 4; i++){
+					for(uint8_t j = 0; j < 4; j++){
+						state -> bytes[i][j] ^= prev_state -> bytes[i][j];
+					}
+				}
+			}
+		}
+		
+		if(cipher_type == AES_CIPHER_CBC){
+			memcpy(prev_state, temp_state, sizeof(struct aes_state));
+		}
+		
+		uint8_t *cleartext_ptr = (uint8_t *)(cleartext+state_index);
 		for(uint8_t i = 0; i < 4; i++){
 			for(uint8_t j = 0; j < 4; j++){
-				*(output_ptr+(j*4)+i) = state -> bytes[i][j];
+				*(cleartext_ptr+(j*4)+i) = state -> bytes[i][j];
 			}
 		}
 	}
 	
-	//Remove padding	
-	//Expect format where padding byte is equal to number of padding bytes
-	//e.g. 0x0202/0x030303/0x04040404
-        unsigned char last_char = cleartext[input_size-1];
-	unsigned char *padding_ptr = cleartext+input_size-last_char;
-        size_t num_padding = last_char;
+	size_t unpadded_output_size = pkcs7_unpad(output, cleartext, input_size, 16);
 	
-	//Check if the last N bytes are actually all equal to N
-	_Bool is_padding = 0;
-	if(last_char < 16 && strchr(cleartext, last_char) == (char *)padding_ptr){
-		is_padding = 1;
+	if(cipher_type == AES_CIPHER_CBC){
+		free(prev_state);
+		free(temp_state);
 	}
-	
-        if(is_padding){
-		//Update output_size
-                output_size = (input_size - last_char)+1; //+\0
-		//Remove the last (last_char) bytes
-                memset(cleartext+input_size-last_char, 0, last_char);
-                num_padding = last_char;
-        }
-	
-	*output = calloc(output_size, sizeof(unsigned char));
-	memcpy(*output, cleartext, output_size);
-	
 	for(uint8_t i = 0; i < 15; i++){ free(key_schedule[i]); }
 	free(state);
 	free(cleartext);
-	return 0;
+	
+	return unpadded_output_size;
 }
 
 void inv_cipher(struct aes_state *state, struct aes_key *key_schedule[15]){

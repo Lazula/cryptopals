@@ -41,10 +41,10 @@ int main(int argc, char *argv[]){
 	}
 	fclose(key_file);
 	
-	//Calculate and subtract pad size from key size, then add to total
+	unsigned char *initialization_vector = "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
 	unsigned char *decrypted_data = NULL;
 	
-	aes_decrypt(&decrypted_data, raw_encrypted_data, raw_data_size, key, AES_CIPHER_ECB, AES_KEY_128);
+	aes_decrypt(&decrypted_data, raw_encrypted_data, raw_data_size, key, initialization_vector, AES_CIPHER_CBC, AES_KEY_128);
 	
 	printf("%s", decrypted_data);
 	
