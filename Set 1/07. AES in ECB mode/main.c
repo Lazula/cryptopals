@@ -18,7 +18,7 @@ int main(int argc, char *argv[]){
 		linebreak = strchr(line_buffer, '\n');
 		if(linebreak != NULL) *linebreak = '\0';
 		if(strlen(input_buffer) + strlen(line_buffer) > input_buffer_size){
-			printf("Input length too is greater than maximum size %zu\n", input_buffer_size);
+			printf("Input length is greater than maximum size %zu\n", input_buffer_size);
 			exit(EXIT_FAILURE);
 		}
 		strncat(input_buffer, line_buffer, line_buffer_size);
