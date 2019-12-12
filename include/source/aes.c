@@ -5,17 +5,16 @@
  * CBC Mode
  * https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-38a.pdf
  */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
-#include <arpa/inet.h>
 
 #include "../aes.h"
 
 /*
  * State is always 128 bits, regardless of key size and cipher type
- * IV will probably go in here later.
  */
 struct aes_state {
 	uint8_t key_type;
@@ -24,7 +23,7 @@ struct aes_state {
 };
 
 /* 
- * AES keys in the key schedule are always 128 bits. The number of dervied keys depends on the given key size.
+ * AES keys in the key schedule are always 128 bits. The number of derived keys depends on the given key size.
  */
 struct aes_key {
 	uint8_t bytes[4][4];
@@ -44,6 +43,9 @@ void inv_shift_rows(struct aes_state *state);
 void inv_mix_columns(struct aes_state *state);
 uint8_t gf_mult(uint8_t multiplicand, uint8_t multiplier);
 
+/* 
+ * Debugging functions which print out a given state/key
+ */
 void dump_state(struct aes_state *state);
 void dump_key(struct aes_key *key);
 
@@ -90,7 +92,18 @@ static const uint32_t round_constants[10] = {
 };
 
 /*
- * Automatically allocates *output for the corrent size.
+ * Parameters:
+ * **output: Automatically allocates *output for the correct size if == NULL
+ * *input: Data to be encrypted. Binary safe.
+ * *key: The main AES key. 16, 24, or 32 bytes based on key_type.
+ * *initialization_vector: Used for CBC mode. Unused in ECB mode - can be 0.
+ * cipher_type: Uses constants defined in aes.h such as AES_CIPHER_ECB to select cipher mode.
+ * key_type: Uses constants defined in aes.h such as AES_KEY_128 to select key size. Currently supports 128, 192, and 256.
+ * 
+ * Returns: The size of the PKCS#7 padded and encrypted data block. Multiple of 16.
+ * 
+ * Notes:
+ * - There may be a better way to handle the initialization vector since it isn't always used.
  */
 size_t aes_encrypt(unsigned char **output, unsigned char *input, size_t input_size, unsigned char *key, unsigned char *initialization_vector, uint8_t cipher_type, uint8_t key_type){
 	uint8_t *padded_input = NULL;
@@ -105,15 +118,11 @@ size_t aes_encrypt(unsigned char **output, unsigned char *input, size_t input_si
 	state -> cipher_type = cipher_type;
 	
 	struct aes_state *prev_state = NULL;
-	if(cipher_type == AES_CIPHER_CBC){
-		prev_state = malloc(sizeof(struct aes_state));
-	}
+	if(cipher_type == AES_CIPHER_CBC) prev_state = malloc(sizeof(struct aes_state));
 	
 	struct aes_key *key_schedule[15];
-	for(uint8_t i = 0; i < 15; i++){
-		key_schedule[i] = malloc(sizeof(struct aes_key));
-	}
-	
+	for(uint8_t i = 0; i < 15; i++) key_schedule[i] = malloc(sizeof(struct aes_key));
+		
 	expand_key(key_schedule, state -> key_type, key);
 	
 	for(size_t state_index = 0; state_index < padded_input_size; state_index += 16){
@@ -122,11 +131,11 @@ size_t aes_encrypt(unsigned char **output, unsigned char *input, size_t input_si
 			for(uint8_t j = 0; j < 4; j++){
 				/*
 				 * AES states organize the data by column 
-				 * "LIKETHISABCD0123"
-				 * L T A 0
-				 * I H B 1
-				 * K I C 2
-				 * E S D 3
+				 * "AAAABBBBCCCCDDDD"
+				 * A B C D
+				 * A B C D
+				 * A B C D
+				 * A B C D
 				 */
 				state -> bytes[i][j] = *(input_ptr+(j*4)+i);
 			}
@@ -162,7 +171,7 @@ size_t aes_encrypt(unsigned char **output, unsigned char *input, size_t input_si
 	}
 	
 	if(cipher_type == AES_CIPHER_CBC) free(prev_state);	
-	for(uint8_t i = 0; i < 15; i++){ free(key_schedule[i]); }
+	for(uint8_t i = 0; i < 15; i++) free(key_schedule[i]);
 	free(state);
 	free(ciphertext);
 	free(padded_input);
@@ -170,19 +179,25 @@ size_t aes_encrypt(unsigned char **output, unsigned char *input, size_t input_si
 	return output_size;
 }
 
-//Instead of using input and output, operate directly on given state
+/* 
+ * Parameters:
+ * *state: AES state to have cipher applied
+ * *key_schedule: The AES key schedule to use
+ * 
+ * Returns: void
+ */
 void cipher(struct aes_state *state, struct aes_key *key_schedule[15]){
 	uint8_t rounds;
 	switch(state -> key_type){
-		//128
+		/* 128 */
 		case 0:
 			rounds = 10;
 			break;
-		//192
+		/* 192 */
 		case 1:
 			rounds = 12;
 			break;
-		//256
+		/* 256 */
 		case 2:
 			rounds = 14;
 			break;
@@ -192,37 +207,37 @@ void cipher(struct aes_state *state, struct aes_key *key_schedule[15]){
 			break;
 	}
 	
-	//printf("Round 0:\n");
-	//dump_state(state);
-	
-	//printf("Round 0 key:\n");
-	//dump_key(key_schedule[0]);
-	
-	//First round (0)
+	/* First round (0) */
 	add_round_key(state, key_schedule[0]);
 	
-	//Middle rounds (1 -> rounds-1)
+	/* Middle rounds (1 -> rounds-1) */
 	for(uint8_t round = 1; round < rounds; round++){
-		//printf("Round %hhu:\n", round);
-		//dump_state(state);
 		sub_bytes(state);
 		shift_rows(state);
 		mix_columns(state);
-		//printf("Round %hhu key:\n", round);
-		//dump_key(key_schedule[round]);
 		add_round_key(state, key_schedule[round]);
 	}
 	
-	//Final round (rounds)
-	//printf("Round %hhu:\n", rounds);
-	//dump_state(state);
+	/* Final round (rounds) */
 	sub_bytes(state);
 	shift_rows(state);
 	add_round_key(state, key_schedule[rounds]);
-	//printf("Output:\n");
-	//dump_state(state);
 }
 
+/*
+ * Parameters:
+ * **output: Automatically allocates *output for the correct size if == NULL
+ * *input: Data to be decrypted. Binary safe.
+ * *key: The main AES key. 16, 24, or 32 bytes based on key_type.
+ * *initialization_vector: Used for CBC mode. Unused in ECB mode - can be 0.
+ * cipher_type: Uses constants defined in aes.h such as AES_CIPHER_ECB to select cipher mode.
+ * key_type: Uses constants defined in aes.h such as AES_KEY_128 to select key size. Currently supports 128, 192, and 256.
+ * 
+ * Returns: The size of the PKCS#7 unpadded and decrypted data block.
+ * 
+ * Notes:
+ * - There may be a better way to handle the initialization vector since it isn't always used.
+ */
 size_t aes_decrypt(unsigned char **output, unsigned char *input, size_t input_size, unsigned char *key, unsigned char *initialization_vector, uint8_t cipher_type, uint8_t key_type){
 	uint8_t *cleartext = malloc(input_size);
 	
@@ -293,25 +308,32 @@ size_t aes_decrypt(unsigned char **output, unsigned char *input, size_t input_si
 		free(prev_state);
 		free(temp_state);
 	}
-	for(uint8_t i = 0; i < 15; i++){ free(key_schedule[i]); }
+	for(uint8_t i = 0; i < 15; i++) free(key_schedule[i]);
 	free(state);
 	free(cleartext);
 	
 	return unpadded_output_size;
 }
 
+/* 
+ * Parameters:
+ * *state: AES state to have inv_cipher applied
+ * *key_schedule: The AES key schedule to use
+ * 
+ * Returns: void
+ */
 void inv_cipher(struct aes_state *state, struct aes_key *key_schedule[15]){
 	uint8_t rounds;
 	switch(state -> key_type){
-		//128
+		/* 128 */
 		case 0:
 			rounds = 10;
 			break;
-		//192
+		/* 192 */
 		case 1:
 			rounds = 12;
 			break;
-		//256
+		/* 256 */
 		case 2:
 			rounds = 14;
 			break;
@@ -321,51 +343,49 @@ void inv_cipher(struct aes_state *state, struct aes_key *key_schedule[15]){
 			break;
 	}
 	
-	//printf("Round %hhu:\n", rounds);
-	//dump_state(state);
-	
-	//printf("Round %hhu key:\n", rounds);
-	//dump_key(key_schedule[rounds]);
-	
-	//First round (rounds)
+	/* First round (rounds) */
 	add_round_key(state, key_schedule[rounds]);
 		
-	//Middle rounds (1 -> rounds-1)
+	/* Middle rounds (1 -> rounds-1) */
 	for(uint8_t round = rounds-1; round > 0; round--){
-		//printf("Round %hhu:\n", round);
-		//dump_state(state);
 		inv_shift_rows(state);
 		inv_sub_bytes(state);
 		add_round_key(state, key_schedule[round]);
 		inv_mix_columns(state);
 	}
 	
-	//Final round (0)
+	/* Final round (0) */
 	inv_shift_rows(state);
 	inv_sub_bytes(state);
 	add_round_key(state, key_schedule[0]);
-	//printf("Round 0:\n");
-	//dump_state(state);
 }
 
+/* 
+ * Parameters:
+ * *key_schedule: AES key schedule to fill
+ * key_type: Uses constants defined in aes.h
+ * key: The main AES key
+ * 
+ * Returns: void
+ */
 void expand_key(struct aes_key *key_schedule[15], uint8_t key_type, uint8_t *key){
-	//AES-256 generates 15 keys, 128 and 192 generate fewer
+	/* AES-256 generates 15 keys, 128 and 192 generate fewer */
 	uint32_t all_words[60];
 	uint32_t temp;
 	uint8_t words_in_key, num_rounds;
 	
 	switch(key_type){
-		//AES-128
+		/* AES-128 */
 		case 0:
 			words_in_key = 4;
 			num_rounds = 10;
 			break;
-		//AES-192
+		/* AES-192 */
 		case 1:
 			words_in_key = 6;
 			num_rounds = 12;
 			break;
-		//AES-256
+		/* AES-256 */
 		case 2:
 			words_in_key = 8;
 			num_rounds = 14;
@@ -375,13 +395,23 @@ void expand_key(struct aes_key *key_schedule[15], uint8_t key_type, uint8_t *key
 			exit(EXIT_FAILURE);
 	}
 	
-	//Copy initial words into word array
+	/* Copy initial words into word array */
 	for(uint8_t i = 0; i < words_in_key; i++){
-		//memcpy gets bytes in reverse order
 		memcpy(&all_words[i], key+(i*4), 4);
-		all_words[i] = htonl(all_words[i]);
+		
+		/* Account for little-endianness */
+		uint32_t temp = all_words[i];
+		uint8_t *temp_ptr = (uint8_t *) &temp;
+		uint8_t *word_ptr = (uint8_t *) &all_words[i];
+		
+		for(uint8_t j = 0; j < 4; j++){
+			temp_ptr[j] = word_ptr[3-j];
+		}
+		
+		all_words[i] = temp;
 	}
 	
+	/* Key expansion */
 	for(uint8_t i = words_in_key; i < (4 * (num_rounds+1)); i++){
 		temp = all_words[i-1];
 		if(i % words_in_key == 0){
@@ -392,22 +422,25 @@ void expand_key(struct aes_key *key_schedule[15], uint8_t key_type, uint8_t *key
 		all_words[i] = all_words[i - words_in_key] ^ temp;
 	}
 	
+	/* Copy words into key schedule */
 	for(uint8_t i = 0; i < 15; i++){
 		uint32_t current_word;
 		uint8_t *word_ptr;
 		
 		for(uint8_t j = 0; j < 4; j++){
-			current_word = htonl(all_words[i*4+j]);
+			current_word = all_words[i*4+j];
 			word_ptr = (uint8_t *) &current_word;
 			
 			for(uint8_t k = 0; k < 4; k++){
-				key_schedule[i] -> bytes[k][j] = word_ptr[k];
+				key_schedule[i] -> bytes[k][j] = word_ptr[3-k];
 			}
 		}
 	}
 }
 
-//Apply the key for the current round.
+/* 
+ * Apply the key for the current round.
+ */
 void add_round_key(struct aes_state *state, struct aes_key *current_key){
 	for(uint8_t i = 0; i < 4; i++){
 		for(uint8_t j = 0; j < 4; j++){
@@ -416,6 +449,9 @@ void add_round_key(struct aes_state *state, struct aes_key *current_key){
 	}
 }
 
+/*
+ * Apply the Rinjdael substitution box to the current state
+ */
 void sub_bytes(struct aes_state *state){
 	for(uint8_t i = 0; i < 4; i++){
 		for(uint8_t j = 0; j < 4; j++){
@@ -424,6 +460,9 @@ void sub_bytes(struct aes_state *state){
 	}
 }
 
+/* 
+ * Perform Galois field multiplication for each column
+ */
 void mix_columns(struct aes_state *state){
 	uint8_t temp[4];
 	
@@ -440,19 +479,22 @@ void mix_columns(struct aes_state *state){
 	}
 }
 
+/* 
+ * Rotate rows by row number
+ */
 void shift_rows(struct aes_state *state){
 	uint8_t temp;
 	
-	//Do nothing with row 0
+	/* Do nothing with row 0 */
 	
-	//Shift row 1
+	/* Shift row 1 */
 	temp = state -> bytes[1][0];
 	state -> bytes[1][0] = state -> bytes[1][1];
 	state -> bytes[1][1] = state -> bytes[1][2];
 	state -> bytes[1][2] = state -> bytes[1][3];
 	state -> bytes[1][3] = temp;
 	
-	//Shift row 2
+	/* Shift row 2 */
 	temp = state -> bytes[2][0];
 	state -> bytes[2][0] = state -> bytes[2][2];
 	state -> bytes[2][2] = temp;
@@ -460,7 +502,7 @@ void shift_rows(struct aes_state *state){
 	state -> bytes[2][1] = state -> bytes[2][3];
 	state -> bytes[2][3] = temp;
 	
-	//Shift row 3
+	/* Shift row 3 */
 	temp = state -> bytes[3][3];
 	state -> bytes[3][3] = state -> bytes[3][2];
 	state -> bytes[3][2] = state -> bytes[3][1];
@@ -468,6 +510,9 @@ void shift_rows(struct aes_state *state){
 	state -> bytes[3][0] = temp;
 }
 
+/* 
+ * Inverse mix_columns. Performs Galois field multiplication based on the inverse of the mix_columns constants.
+ */
 void inv_mix_columns(struct aes_state *state){	
 	uint8_t temp[4];
 	
@@ -484,19 +529,22 @@ void inv_mix_columns(struct aes_state *state){
 	}
 }
 
+/* 
+ * Shift rows backwards
+ */
 void inv_shift_rows(struct aes_state *state){
 	uint8_t temp;
 	
-	//Do nothing with row 0
+	/* Do nothing with row 0 */
 	
-	//Shift row 1 backwards
+	/* Shift row 1 backwards */
 	temp = state -> bytes[1][3];
 	state -> bytes[1][3] = state -> bytes[1][2];
 	state -> bytes[1][2] = state -> bytes[1][1];
 	state -> bytes[1][1] = state -> bytes[1][0];
 	state -> bytes[1][0] = temp;
 	
-	//Shift row 2 backwards
+	/* Shift row 2 backwards */
 	temp = state -> bytes[2][0];
 	state -> bytes[2][0] = state -> bytes[2][2];
 	state -> bytes[2][2] = temp;
@@ -504,7 +552,7 @@ void inv_shift_rows(struct aes_state *state){
 	state -> bytes[2][1] = state -> bytes[2][3];
 	state -> bytes[2][3] = temp;
 	
-	//Shift row 3 backwards
+	/* Shift row 3 backwards */
 	temp = state -> bytes[3][0];
 	state -> bytes[3][0] = state -> bytes[3][1];
 	state -> bytes[3][1] = state -> bytes[3][2];
@@ -512,6 +560,9 @@ void inv_shift_rows(struct aes_state *state){
 	state -> bytes[3][3] = temp;
 }
 
+/* 
+ * Apply inverse Rijndael substitution box
+ */
 void inv_sub_bytes(struct aes_state *state){
 	for(uint8_t i = 0; i < 4; i++){
 		for(uint8_t j = 0; j < 4; j++){
@@ -520,11 +571,14 @@ void inv_sub_bytes(struct aes_state *state){
 	}
 }
 
+/* 
+ * Apply substitution box to a word
+ */
 uint32_t sub_word(uint32_t word){
 	uint8_t *word_as_uint8_t_ptr = (uint8_t *) &word;
 	
 	for(uint8_t i = 0; i < 4; i++){
-		//Cast as uint8_t * in order to address by byte index
+		/* Cast as uint8_t * in order to address by byte index */
 		word_as_uint8_t_ptr[i] = sub_box[word_as_uint8_t_ptr[i]];
 	}
 		
@@ -536,21 +590,34 @@ uint32_t sub_word(uint32_t word){
  */
 uint32_t rot_word(uint32_t word){
 	uint8_t bytes[4];
+	/* Account for little-endianness */
 	for(uint8_t i = 0; i < 4; i++){
 		bytes[i] = ((uint8_t *) &word)[3-i];
 	}
 	
 	uint8_t temp;
 	
+	/* Rotate */
 	temp = bytes[0];
 	bytes[0] = bytes[1];
 	bytes[1] = bytes[2];
 	bytes[2] = bytes[3];
 	bytes[3] = temp;
 	
-	return htonl(*((uint32_t *) bytes));
+	uint32_t out_word;
+	uint8_t *out_word_ptr = (uint8_t *) &out_word;
+	
+	/* Return to little-endian */
+	for(uint8_t i = 0; i < 4; i++){
+		out_word_ptr[i] = bytes[3-i];
+	}
+	
+	return out_word;
 }
 
+/* 
+ * Galois field multiplication
+ */
 uint8_t gf_mult(uint8_t multiplicand, uint8_t multiplier){
 	uint8_t result = 0;
 	for(uint8_t i = 0; i < 8; i++){
@@ -569,6 +636,10 @@ uint8_t gf_mult(uint8_t multiplicand, uint8_t multiplier){
 	return result;
 }
 
+/*
+ * DEBUG
+ * Dump an AES state to stdout
+ */
 void dump_state(struct aes_state *state){
 	for(uint8_t i = 0; i < 4; i++){
 		printf("%02hhx %02hhx %02hhx %02hhx\n", state -> bytes[i][0], state -> bytes[i][1], state -> bytes[i][2], state -> bytes[i][3]);
@@ -576,6 +647,10 @@ void dump_state(struct aes_state *state){
 	puts("\n");
 }
 
+/* 
+ * DEBUG
+ * Dump an AES schedule key to stdout
+ */
 void dump_key(struct aes_key *key){
 	for(uint8_t i = 0; i < 4; i++){
 		printf("%02hhx %02hhx %02hhx %02hhx\n", key -> bytes[i][0], key -> bytes[i][1], key -> bytes[i][2], key -> bytes[i][3]);
