@@ -1,4 +1,5 @@
 .*
 !.gitignore
 
+test_includes*
 peda-session-*
