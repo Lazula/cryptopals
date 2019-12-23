@@ -16,7 +16,7 @@ size_t hex_decode(unsigned char **output_data, unsigned char *input_string){
 	
 	size_t output_size = strlen(input_string)/2;
 	*output_data = calloc(output_size, sizeof(unsigned char));
-        
+	
 	unsigned char *current_input_chars = calloc(3, sizeof(unsigned char));
 	unsigned char current_decoded_char;
 	unsigned int current_char_index = 0;
@@ -36,20 +36,20 @@ size_t hex_decode(unsigned char **output_data, unsigned char *input_string){
 
 size_t hex_encode(unsigned char **output_string, unsigned char *input_data, size_t input_size){
 	size_t output_size = input_size*2 + 1;
-        unsigned char current_input_char;
-        unsigned char *current_output_chars = calloc(3, 1);
-        
+	unsigned char current_input_char;
+	unsigned char *current_output_chars = calloc(3, 1);
+	
 	*output_string = calloc(output_size, sizeof(unsigned char));
 	
-        for(unsigned int i = 0; i < input_size; i++){
-                current_input_char = input_data[i];
-                //hex-encode current char
-                sprintf(current_output_chars, "%02x", current_input_char);
-                //build output char-by-char
-                memcpy(*output_string + (i*2), current_output_chars, 2);
-        }
-        
-        free(current_output_chars);
+	for(unsigned int i = 0; i < input_size; i++){
+		current_input_char = input_data[i];
+		//hex-encode current char
+		sprintf(current_output_chars, "%02x", current_input_char);
+		//build output char-by-char
+		memcpy(*output_string + (i*2), current_output_chars, 2);
+	}
+	
+	free(current_output_chars);
 	return output_size;
 }
 
