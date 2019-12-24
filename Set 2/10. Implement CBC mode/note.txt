@@ -1,0 +1,3 @@
+Took a long time to figure out that the valgrind/asan error was related to not having enough space for a trailing null byte and trying to print the decrypted data as a string. This was fixed by confirming that aes_decrypt will only allocate space for raw bytes in *output, NOT including the trailing null for a string, and then copying decrypted_data into a new buffer called decrypted_string with one extra byte.
+
+This happened because I forgot that while I was working with what turned out to be ASCII data, it had to be treated as though it was binary data and was never placed in a string-safe buffer.
