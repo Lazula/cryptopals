@@ -19,11 +19,12 @@ size_t pkcs7_pad(unsigned char **output, unsigned char *input, size_t input_size
 	size_t padding_amount = block_size - (input_size % block_size);
 	
 	/* Account for 16 - ([multiple of 16] % 16) = 16 */
-	if(padding_amount == 16) padding_amount = 0;
+	if(padding_amount == block_size) padding_amount = 0;
+	
 	size_t output_size = input_size + padding_amount;
 	
 	/* Avoid memory leakage, only overwrite null pointer */
-	if(*output == NULL) *output = calloc(output_size, sizeof(unsigned char));
+	if(*output == NULL) *output = malloc(output_size);
 	
 	/* Copy data into *output and apply padding, if applicable */
 	memcpy(*output, input, input_size);
@@ -34,7 +35,7 @@ size_t pkcs7_pad(unsigned char **output, unsigned char *input, size_t input_size
 
 /* 
  * Parameters:
- * **output: Automatically allocates *output for the correct size if == NULL
+ * **output: Automatically allocates *output for the correct size if == NULL (only enough for raw data, does not add space for trailing \0)
  * *input: Data to unpad
  * input_size: Size of data to unpad
  * block_size: Block size used (used for checking if last char can be padding)
@@ -47,7 +48,7 @@ size_t pkcs7_pad(unsigned char **output, unsigned char *input, size_t input_size
 size_t pkcs7_unpad(unsigned char **output, unsigned char *input, size_t input_size, size_t block_size){
 	unsigned char last_char = input[input_size-1];
 	unsigned char *padding_ptr = input+input_size-last_char;
-	size_t padding_amount = last_char;
+	size_t output_size = input_size;
 	
 	/* padding chars cannot be >= block_size or == \0 */
 	unsigned char *pad_check_buf = NULL;
@@ -55,17 +56,22 @@ size_t pkcs7_unpad(unsigned char **output, unsigned char *input, size_t input_si
 		pad_check_buf = malloc(last_char);
 		memset(pad_check_buf, last_char, last_char);
 		
-		size_t output_size = input_size;
 		/* Make sure the last N chars actually are last_char */
 		if(memcmp(pad_check_buf, padding_ptr, last_char) == 0){
 			output_size = input_size-last_char;
 		}
 	}
 	
-	if(*output == NULL) *output = malloc(output_size);
-	memcpy(*output, input, output_size);
-	
 	if(pad_check_buf != NULL) free(pad_check_buf);
+	
+	/* Remember to check for null ptrptr */
+	if(output != NULL){
+		if(*output == NULL){
+			*output = malloc(output_size);
+		}
+	}
+	
+	memcpy(*output, input, output_size);
 	
 	return output_size;
 }

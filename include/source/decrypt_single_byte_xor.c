@@ -14,12 +14,13 @@
  * return value is the viability score given to the output.
  * This function IS binary safe on input.
  */
-double decrypt_single_byte_xor(unsigned char *output,  unsigned char *output_key, unsigned char *input_data, size_t input_size){
-	size_t decrypted_string_size = input_size+1, i = 0;
-	unsigned char *decrypted_string = calloc(decrypted_string_size, 1);
+double decrypt_single_byte_xor(char *output, unsigned char *output_key, unsigned char *input_data, size_t input_size){
+	size_t decrypted_string_size = input_size+1;
+	char *decrypted_string = malloc(decrypted_string_size);
 	unsigned char current_key = 0, best_key = 0, valid_ascii;
 	double current_key_score, best_key_score = DBL_MAX;
 	
+	size_t i;
 	do{
 		valid_ascii = 1;
 		current_key++;
@@ -62,12 +63,13 @@ double decrypt_single_byte_xor(unsigned char *output,  unsigned char *output_key
  * This is a copy of the main decryptor method, intended for use with short texts. Having one or two uncommon characters is penalized much less here.
  * The fast analyzer uses higher-is-better scoring.
  */
-double decrypt_single_byte_xor_fast(unsigned char *output,  unsigned char *output_key, unsigned char *input_data, size_t input_size){
-	size_t decrypted_string_size = input_size+1, i;
-	unsigned char *decrypted_string = calloc(decrypted_string_size, 1);
+double decrypt_single_byte_xor_fast(char *output,  unsigned char *output_key, unsigned char *input_data, size_t input_size){
+	size_t decrypted_string_size = input_size+1;
+	char *decrypted_string = malloc(decrypted_string_size);
 	unsigned char current_key = 0, best_key = 0, valid_ascii;
 	double current_key_score, best_key_score = 0;
 	
+	size_t i;
 	do{
 		valid_ascii = 1;
 		current_key++;

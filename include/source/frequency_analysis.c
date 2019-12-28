@@ -15,9 +15,9 @@ static double expected_frequencies[27] = {0.0651738, 0.0124248, 0.0217339, 0.034
  * Smaller values are a closer match.
  * This function is binary safe - any unprintable characters cause a return value of DBL_MAX, the lowest possible priority.
  */
-double analyze_english_plaintext_viability(unsigned char *text){
+double analyze_english_plaintext_viability(char *text){
 	double *actual_frequencies = malloc(27*sizeof(double));
-	unsigned int ignored = 0;
+	size_t ignored = 0;
 	
 	size_t i;
 	for(i = 0; i < 27; i++) actual_frequencies[i] = 0;
@@ -45,12 +45,14 @@ double analyze_english_plaintext_viability(unsigned char *text){
 			ignored++;
 		}else{
 			//Contains unprintable characters. Abort with lowest possible priority.
+			printf("Unprintable character %#02hhx\n", current_char);
+			free(actual_frequencies);
 			return DBL_MAX;
 		}
 	}
 	
 	double chi_squared = 0, observed, expected, difference, diff_squared;
-	unsigned long length = strlen(text) - ignored;
+	size_t length = strlen(text) - ignored;
 	for(i = 0; i < 27; i++){
 		observed = actual_frequencies[i];
 		expected = length * expected_frequencies[i];
@@ -67,29 +69,33 @@ double analyze_english_plaintext_viability(unsigned char *text){
 
 /* 
  * This function does not use chi-squared. Instead, the frequency of each letter is added up and used raw.
- * The final answer is subtracted from DBL_MAX to maintain easy interoperability with current code and the real version, i.e. lower score is better
+ * This scoring method is the inverse of the above, i.e. higher score is better.
  * This function is binary safe - any unprintable characters cause a return value of 0, the lowest possible priority.
  */
-double analyze_english_plaintext_viability_fast(unsigned char *text){
+double analyze_english_plaintext_viability_fast(char *text){
 	double *actual_frequencies = malloc(27*sizeof(double));
 	
 	size_t i;
 	for(i = 0; i < 27; i++) actual_frequencies[i] = 0;
 	
-	unsigned char current_char;
+	char current_char;
 	for(i = 0; i < strlen(text); i++){
-		current_char = text[i];
+		current_char = (unsigned char) text[i];
 		if(current_char >= 65 && current_char <= 90){
 			//Lower case
 			actual_frequencies[current_char - 65]++;
 		}else if(current_char >= 97 && current_char <= 122){
 			//Upper case
 			actual_frequencies[current_char - 97]++;
-		}else if(current_char == 32){
-			//space
-			actual_frequencies[26]++;
+		}else if(current_char >= 32 && current_char <= 126){
+			if(current_char == 32){
+				//space
+				actual_frequencies[26]++;
+			}
 		}else if(current_char != '\t' && current_char != '\n'){
 			//Contains unprintable characters. Abort with lowest possible priority.
+			//printf("Unprintable character: %#02hhx\n", current_char);
+			free(actual_frequencies);
 			return 0;
 		}
 	}

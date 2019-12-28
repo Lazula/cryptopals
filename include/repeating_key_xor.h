@@ -3,6 +3,6 @@
 
 #include <stddef.h>
 
-unsigned int repeating_key_xor(unsigned char *output_data, unsigned char *input_data, size_t input_size, unsigned char *key, size_t key_size);
+void repeating_key_xor(unsigned char *output_data, unsigned char *input_data, size_t input_size, unsigned char *key, size_t key_size);
 
 #endif

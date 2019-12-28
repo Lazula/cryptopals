@@ -8,6 +8,8 @@ The **include** directory is a collection of header and source files containing 
 
 While I try to maintain a basic level of security in all my programs, these are a bit loose since they aren't really "programs" proper. What I'm trying to say is that you probably shouldn't put a suid bit on these.
 
+Signed chars are used for ASCII text (null-terminated strings). Unsigned chars are used whenever binary safety is needed.
+
 Tools used:
 * tmux - Session management
 * vim - All text file editing

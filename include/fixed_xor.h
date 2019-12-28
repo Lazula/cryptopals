@@ -3,6 +3,6 @@
 
 #include <stddef.h>
 
-unsigned int fixed_xor(unsigned char *output_string, unsigned char *input_data, unsigned char *key, size_t size);
+void fixed_xor(unsigned char *output_data, unsigned char *input_data, unsigned char *key, size_t size);
 
 #endif

@@ -12,17 +12,20 @@
  * Notes
  * Encodes an arbitrary block of data to padded base64 (to encode a string, use strlen as input_size)
  */
-size_t base64_encode(unsigned char **output_string, unsigned char *input_data, size_t input_size){
-        const char *base64_table = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-
-        unsigned char current_input_bytes[4] = "", current_output_sextets[5] = "", *output_buffer = NULL;
-	size_t index;
+size_t base64_encode(char **output_string, unsigned char *input_data, size_t input_size){
+	const char *const base64_table = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+	
+	unsigned char current_input_bytes[4] = "", current_output_sextets[5] = "", *output_buffer = NULL;
 	unsigned int num_padding = 0;
-
+	
 	/* (4n/3) for unpadded length, + 3 bitwise &~3 to round up to multiple of 4 for padded length, plus \0 */
 	size_t base64_encoded_string_size = ((((4 * input_size) / 3) + 3) & ~3 ) + 1;
-	unsigned char *base64_encoded_string = calloc(base64_encoded_string_size, sizeof(unsigned char));
+	char *base64_encoded_string = calloc(base64_encoded_string_size, sizeof(char));
 	
+	output_buffer = malloc(5);
+	output_buffer[4] = '\0';
+	
+	size_t index;
 	/* work in 3-byte blocks, 3*8=24/6=4 */
 	for(index = 0; index < input_size;){
 		current_input_bytes[0] = input_data[index++];
@@ -51,13 +54,11 @@ size_t base64_encode(unsigned char **output_string, unsigned char *input_data, s
 		/* match bottom 6 bits in char 2 */
 		current_output_sextets[3] = current_input_bytes[2] & 0x3F;
 		
-		output_buffer = malloc(5);
-		output_buffer[4] = '\0';
 		size_t output_index;
 		for(output_index = 0; output_index < 4; output_index++){
-			output_buffer[output_index] = base64_table[current_output_sextets[output_index]];
+			output_buffer[output_index] = base64_table[(unsigned char) current_output_sextets[output_index]];
 		}
-		strncat(base64_encoded_string, output_buffer, 4);
+		strncat(base64_encoded_string, (char *) output_buffer, 4);
 	}
 	
 	/* Go from len-(1+num_padding) to the end, replacing with = */
@@ -65,7 +66,7 @@ size_t base64_encode(unsigned char **output_string, unsigned char *input_data, s
 		strncpy(base64_encoded_string + padding_check_index, "=", 1);
 	}
 	
-	if(*output_string == NULL) *output_string = calloc(base64_encoded_string_size, sizeof(unsigned char));
+	if(*output_string == NULL) *output_string = malloc(base64_encoded_string_size);
 	
 	memcpy(*output_string, base64_encoded_string, base64_encoded_string_size);
 	free(base64_encoded_string);
@@ -89,19 +90,23 @@ size_t base64_encode(unsigned char **output_string, unsigned char *input_data, s
  * Decodes an arbitrary block of base64 encoded data
  * Does not support unpadded base64
  */
-size_t base64_decode(unsigned char **output_data, unsigned char *input_string){
-        const char *base64_table = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+size_t base64_decode(unsigned char **output_data, char *input_string){
+	const char *const base64_table = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 	
-	unsigned char *current_input_chars = calloc(5, 1), *current_input_sextets = calloc(5, 1), *current_output_bytes = calloc(3, 1), *output_buffer, base64index;
+	char *current_input_chars = malloc(5), *current_input_sextets = malloc(4), *output_buffer = NULL, base64index = 0;
+	current_input_chars[4] = '\0';
+	current_input_sextets[3] = '\0';
+	unsigned char *current_output_bytes = malloc(3);
+	current_output_bytes[2] = '\0';
 	
 	char *first_pad = strchr(input_string, '=');
 	/* If there is no padding, set first_pad to the index of the terminating null byte */
 	if(first_pad == NULL) first_pad = strchr(input_string, '\0');
 	
-	unsigned int num_padding = strlen(first_pad);
+	size_t num_padding = strlen(first_pad);
 	size_t input_size = strlen(input_string) - num_padding;
 	size_t output_data_size = ((input_size * 3) / 4);
-	output_buffer = calloc(output_data_size, 1);
+	output_buffer = malloc(output_data_size);
 	size_t index, output_index = 0, j;
 	
 	for(index = 0; index < input_size; index += 4){
@@ -117,7 +122,6 @@ size_t base64_decode(unsigned char **output_data, unsigned char *input_string){
 		while(strrchr(current_input_chars, '=') != NULL){
 			*strrchr(current_input_chars, '=') = '\0';
 		}
-		
 		/* get the actual sextet values based on base64 table index */
 		for(j = 0; j <= 3; j++){
 			base64index = (char) (strchr(base64_table, current_input_chars[j]) - base64_table);
@@ -141,7 +145,8 @@ size_t base64_decode(unsigned char **output_data, unsigned char *input_string){
 		output_index += 3;
 	}
 	
-	*output_data = calloc(output_data_size, 1);
+	*output_data = malloc(output_data_size);
+	
 	memcpy(*output_data, output_buffer, output_data_size);
 	
 	free(current_input_sextets);

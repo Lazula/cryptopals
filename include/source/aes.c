@@ -226,7 +226,7 @@ void cipher(struct aes_state *state, struct aes_key *key_schedule[15]){
 
 /*
  * Parameters:
- * **output: Automatically allocates *output for the correct size if == NULL
+ * **output: Automatically allocates *output for the correct size if == NULL (intended for binary data - will not add space for trailing \0)
  * *input: Data to be decrypted. Binary safe.
  * *key: The main AES key. 16, 24, or 32 bytes based on key_type.
  * *initialization_vector: Used for CBC mode. Unused in ECB mode - can be 0.
@@ -301,7 +301,7 @@ size_t aes_decrypt(unsigned char **output, unsigned char *input, size_t input_si
 			}
 		}
 	}
-	
+		
 	size_t unpadded_output_size = pkcs7_unpad(output, cleartext, input_size, 16);
 	
 	if(cipher_type == AES_CIPHER_CBC){
