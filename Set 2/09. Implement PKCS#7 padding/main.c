@@ -3,12 +3,13 @@
 
 #include "../../include/crypto_utility.h"
 
-int main(int argc, char *argv[]){
-	unsigned char *const input = "YELLOW SUBMARINE", *padded = NULL;
+int main(){
+	char *input = "YELLOW SUBMARINE";
+	unsigned char *padded = NULL;
 	
-	size_t const block_size = 20;
+	const size_t block_size = 20;
 		
-	pkcs7_pad(&padded, input, 16, block_size);
+	pkcs7_pad(&padded, (unsigned char *) input, 16, block_size);
 	printf("%s\n", padded);
 	
 	free(padded);
