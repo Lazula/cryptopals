@@ -1,0 +1,5 @@
+Easy
+-Change compile scripts to Makefiles
+
+Moderate
+-Make all code C89-compliant (add -std=c89 -pedantic to flags)
