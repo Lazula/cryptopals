@@ -66,6 +66,7 @@ double decrypt_single_byte_xor(char *output, unsigned char *output_key, unsigned
 double decrypt_single_byte_xor_fast(char *output,  unsigned char *output_key, unsigned char *input_data, size_t input_size){
 	size_t decrypted_string_size = input_size+1;
 	char *decrypted_string = malloc(decrypted_string_size);
+	decrypted_string[decrypted_string_size-1] = '\0';
 	unsigned char current_key = 0, best_key = 0, valid_ascii;
 	double current_key_score, best_key_score = 0;
 	
@@ -88,7 +89,7 @@ double decrypt_single_byte_xor_fast(char *output,  unsigned char *output_key, un
 		if(current_key_score > best_key_score){
 			best_key_score = current_key_score;
 			best_key = current_key;
-			//printf("new best score %lf for key %#02x with output text %s\n", best_key_score, best_key, decrypted_string);
+			/* printf("new best score %lf for key %#02x with output text %s\n", best_key_score, best_key, decrypted_string); */
 		}
 	}while(current_key < 255);
 	
