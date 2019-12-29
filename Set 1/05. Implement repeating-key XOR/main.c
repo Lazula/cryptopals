@@ -9,7 +9,7 @@ int main(int argc, char *argv[]){
 	FILE *data_file;
 	size_t input_buffer_size = 1024;
 	size_t input_string_length, hex_encoded_output_size;
-	unsigned char *input_buffer = calloc(input_buffer_size, 1);
+	char *input_buffer = malloc(input_buffer_size);
 	
 	data_file = fopen("data.txt", "r");
 	
@@ -17,18 +17,20 @@ int main(int argc, char *argv[]){
 	if(data_file != NULL){
 		fread(input_buffer, 1, input_buffer_size-1, data_file);
 	}
+	input_buffer[input_buffer_size-1] = '\0';
 	
-	unsigned char *encrypted_data, *hex_encoded_encrypted_data, *linebreak;
+	unsigned char *encrypted_data;
+	char *hex_encoded_encrypted_data = NULL, *linebreak;
 	unsigned char *key = "ICE";
 	size_t key_size = 3;
 	
 	linebreak = strrchr(input_buffer, '\n');
 	//delete last linebreak, if it exists
-	if(linebreak != NULL) memset(linebreak, 0, 1);
+	if(linebreak != NULL) *linebreak = '\0';
 	
 	input_string_length = strlen(input_buffer);
 	
-	encrypted_data = calloc(input_string_length, 1);
+	encrypted_data = malloc(input_string_length);
 	
 	repeating_key_xor(encrypted_data, input_buffer, input_string_length, key, key_size);
 	
