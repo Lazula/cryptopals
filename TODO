@@ -1,5 +1,8 @@
 Easy
+-Add header includes to source files and remove function prototypes from *.c
 -Change compile scripts to Makefiles
 
 Moderate
+-Add compiler warnings (-Wall -Wextra) and fix.
+-Fix various UB, particularly strict aliasing violations in aes.c
 -Make all code C89-compliant (add -std=c89 -pedantic to flags)
