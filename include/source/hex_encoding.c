@@ -51,6 +51,8 @@ size_t hex_encode(char **output_string, unsigned char *input_data, size_t input_
 		memcpy(*output_string + (i*2), current_output_chars, 2);
 	}
 	
+	(*output_string)[output_size-1] = '\0';
+	
 	free(current_output_chars);
 	return output_size;
 }
