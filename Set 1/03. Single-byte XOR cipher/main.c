@@ -11,18 +11,19 @@ int main(int argc, char *argv[]){
 	FILE *data_file;
 	size_t data_buffer_size = 70;
 	unsigned char *hex_encoded_data = calloc(data_buffer_size, 1);
-	unsigned char *raw_data;
+	unsigned char *raw_data = NULL;
 	
 	data_file = fopen("data.txt", "r");
 	getline((char **) &hex_encoded_data, &data_buffer_size, data_file);
 	fclose(data_file);
 	char *linebreak = strchr(hex_encoded_data, '\n');
-	if(linebreak != NULL) memset(linebreak, 0, 1);
+	if(linebreak != NULL) *linebreak = '\0';
 	
 	size_t raw_data_size = hex_decode(&raw_data, hex_encoded_data);
 	
 	size_t decrypted_string_size = raw_data_size+1;
-	unsigned char *decrypted_string = calloc(raw_data_size, 1);
+	char *decrypted_string = malloc(decrypted_string_size);
+	decrypted_string[decrypted_string_size-1] = '\0';
 	unsigned char current_key = 0, best_key, valid_ascii;
 	double current_key_score, best_key_score = DBL_MAX;
 	

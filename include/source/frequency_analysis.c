@@ -23,7 +23,7 @@ double analyze_english_plaintext_viability(char *text){
 	for(i = 0; i < 27; i++) actual_frequencies[i] = 0;
 	
 	unsigned char current_char;
-	for(i = 0; i < strlen(text); i++){
+	for(i = 0; i < strlen(text)-1; i++){
 		current_char = text[i];
 		if(current_char >= 65 && current_char <= 90){
 			//Lower case
@@ -45,7 +45,7 @@ double analyze_english_plaintext_viability(char *text){
 			ignored++;
 		}else{
 			//Contains unprintable characters. Abort with lowest possible priority.
-			printf("Unprintable character %#02hhx\n", current_char);
+			//printf("Unprintable character %#02hhx\n", current_char);
 			free(actual_frequencies);
 			return DBL_MAX;
 		}
