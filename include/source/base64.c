@@ -105,7 +105,7 @@ size_t base64_decode(unsigned char **output_data, char *input_string){
 	
 	size_t num_padding = strlen(first_pad);
 	size_t input_size = strlen(input_string) - num_padding;
-	size_t output_data_size = ((input_size * 3) / 4);
+	size_t output_data_size = ((input_size * 3) / 4) + 1; /* + \0 */
 	output_buffer = malloc(output_data_size);
 	size_t index, output_index = 0, j;
 	
