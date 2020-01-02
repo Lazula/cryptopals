@@ -15,7 +15,7 @@ size_t hex_decode(unsigned char **output_data, char *input_string){
 	}
 	
 	size_t output_size = strlen(input_string)/2;
-	*output_data = malloc(output_size);
+	if(*output_data == NULL) *output_data = malloc(output_size);
 	
 	char *current_input_chars = malloc(3);
 	current_input_chars[2] = '\0';
