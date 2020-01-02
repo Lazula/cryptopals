@@ -17,6 +17,7 @@
 double decrypt_single_byte_xor(char *output, unsigned char *output_key, unsigned char *input_data, size_t input_size){
 	size_t decrypted_string_size = input_size+1;
 	char *decrypted_string = malloc(decrypted_string_size);
+	decrypted_string[decrypted_string_size-1] = '\0';
 	unsigned char current_key = 0, best_key = 0, valid_ascii;
 	double current_key_score, best_key_score = DBL_MAX;
 	
@@ -53,7 +54,7 @@ double decrypt_single_byte_xor(char *output, unsigned char *output_key, unsigned
 			strncpy(output, decrypted_string, decrypted_string_size);
 		}
 	}
-	
+
 	free(decrypted_string);
 	
 	return best_key_score;
