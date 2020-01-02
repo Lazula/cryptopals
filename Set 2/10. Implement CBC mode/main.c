@@ -10,11 +10,14 @@ int main(int argc, char *argv[]){
 	//input_buffer accepts up to 1MB-1 with lines up to the same length
 	size_t input_buffer_size = 1048576;
 	size_t line_buffer_size = input_buffer_size;
-	unsigned char *input_buffer = calloc(input_buffer_size, sizeof(unsigned char)), *line_buffer = calloc(line_buffer_size, sizeof(unsigned char)), *linebreak = NULL, *raw_encrypted_data = NULL;
+	char *input_buffer = malloc(input_buffer_size);
+	char *line_buffer = malloc(line_buffer_size);
+	char *linebreak = NULL;
+	unsigned char *raw_encrypted_data = NULL;
 	
 	data_file = fopen("data.txt", "r");
 	
-	while(getdelim((char **)&line_buffer, &line_buffer_size, '\n', data_file) > -1){
+	while(getdelim(&line_buffer, &line_buffer_size, '\n', data_file) > -1){
 		linebreak = strchr(line_buffer, '\n');
 		if(linebreak != NULL) *linebreak = '\0';
 		if(strlen(input_buffer) + strlen(line_buffer) > input_buffer_size){
@@ -30,9 +33,7 @@ int main(int argc, char *argv[]){
 	
 	free(input_buffer);
 	
-	//key file should be in the format [LENGTH]\n[DATA], e.g. "16\nYELLOW SUBMARINE"
 	FILE *key_file = fopen("key.txt", "r");
-	//128 bits = 16 bytes
 	size_t key_size = 16;
 	unsigned char *key = calloc(key_size, sizeof(unsigned char));
 	if(fread(key, 1, key_size, key_file) != key_size){
