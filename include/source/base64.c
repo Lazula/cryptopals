@@ -63,7 +63,7 @@ size_t base64_encode(char **output_string, unsigned char *input_data, size_t inp
 	
 	/* Go from len-(1+num_padding) to the end, replacing with = */
 	for(size_t padding_check_index = strlen(base64_encoded_string) - num_padding; padding_check_index < strlen(base64_encoded_string); padding_check_index++){
-		strncpy(base64_encoded_string + padding_check_index, "=", 1);
+		strncpy(base64_encoded_string + padding_check_index, "=", 2);
 	}
 	
 	if(*output_string == NULL) *output_string = malloc(base64_encoded_string_size);
@@ -105,7 +105,7 @@ size_t base64_decode(unsigned char **output_data, char *input_string){
 	
 	size_t num_padding = strlen(first_pad);
 	size_t input_size = strlen(input_string) - num_padding;
-	size_t output_data_size = ((input_size * 3) / 4) + 1; /* + \0 */
+	size_t output_data_size = ((input_size + num_padding) * 3) / 4;
 	output_buffer = malloc(output_data_size);
 	size_t index, output_index = 0, j;
 	
