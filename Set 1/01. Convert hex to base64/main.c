@@ -19,7 +19,7 @@ int main(int argc, char *argv[]){
 	unsigned char *raw_data;
 	size_t raw_data_size = hex_decode(&raw_data, hex_encoded_string);
 	
-	unsigned char *base64_encoded_text;
+	char *base64_encoded_text = NULL;
 	base64_encode(&base64_encoded_text, raw_data, raw_data_size);
 	
 	printf("%s\n", base64_encoded_text);
