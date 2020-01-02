@@ -31,11 +31,12 @@ int main(int argc, char *argv[]){
 	
 	fixed_xor(decrypted_data, raw_data, raw_key, raw_data_size);
 		
-	unsigned char *encoded_decrypted_data;
+	char *encoded_decrypted_data = NULL;
 	hex_encode(&encoded_decrypted_data, decrypted_data, raw_data_size);
 	
 	printf("%s\n", encoded_decrypted_data);
 	
+	free(decrypted_data);
 	free(hex_encoded_data);
 	free(hex_encoded_key);
 	free(raw_data);
