@@ -10,8 +10,11 @@ int main(int argc, char *argv[]){
 	//input_buffer accepts up to 1MB-1 with lines up to the same length
 	size_t input_buffer_size = 1048576;
 	size_t line_buffer_size = input_buffer_size;
-	unsigned char *input_buffer = calloc(input_buffer_size, sizeof(unsigned char)), *line_buffer = calloc(line_buffer_size, sizeof(unsigned char)), *linebreak, *raw_encrypted_data;
-	
+	char *input_buffer = malloc(input_buffer_size);
+	char *line_buffer = malloc(line_buffer_size);
+	char *linebreak = NULL;
+	unsigned char *raw_encrypted_data = NULL;
+
 	data_file = fopen("data.txt", "r");
 	
 	while(getdelim((char **)&line_buffer, &line_buffer_size, '\n', data_file) > -1){
@@ -43,12 +46,19 @@ int main(int argc, char *argv[]){
 	
 	//Calculate and subtract pad size from key size, then add to total
 	unsigned char *decrypted_data = NULL;
+	size_t decrypted_data_size;
 	
-	aes_decrypt(&decrypted_data, raw_encrypted_data, raw_data_size, key, AES_CIPHER_ECB, AES_KEY_128);
+	decrypted_data_size = aes_decrypt(&decrypted_data, raw_encrypted_data, raw_data_size, key, NULL, AES_CIPHER_ECB, AES_KEY_128);
 	
-	printf("%s", decrypted_data);
+	size_t decrypted_string_size = decrypted_data_size+1;
+	char *decrypted_string = malloc(decrypted_string_size);
+	memcpy(decrypted_string, decrypted_data, decrypted_data_size);
+	decrypted_string[decrypted_string_size-1] = '\0';
+	
+	printf("%s", decrypted_string);
 	
 	free(raw_encrypted_data);
 	free(decrypted_data);
+	free(decrypted_string);
 	free(key);
 }
