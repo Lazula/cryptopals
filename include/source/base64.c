@@ -20,30 +20,37 @@ size_t base64_encode(char **output_string, unsigned char *input_data, size_t inp
 	unsigned char current_input_bytes[4] = "", current_output_sextets[5] = "", *output_buffer = NULL;
 	unsigned int num_padding = 0;
 	
+	size_t base64_encoded_string_size;
+	char *base64_encoded_string;
+	
+	size_t index, output_index, padding_check_index;
+	
+	
 	/* (4n/3) for unpadded length, + 3 bitwise &~3 to round up to multiple of 4 for padded length, plus \0 */
-	size_t base64_encoded_string_size = ((((4 * input_size) / 3) + 3) & ~3 ) + 1;
-	char *base64_encoded_string = calloc(base64_encoded_string_size, sizeof(char));
+	base64_encoded_string_size = ((((4 * input_size) / 3) + 3) & ~3 ) + 1;
+	base64_encoded_string = malloc(base64_encoded_string_size);
+	/* string memory needs to be initialized for strncat to work properly */
+	memset(base64_encoded_string, 0, base64_encoded_string_size);
 	
 	output_buffer = malloc(5);
 	output_buffer[4] = '\0';
 	
-	size_t index;
 	/* work in 3-byte blocks, 3*8=24/6=4 */
-	for(index = 0; index < input_size;){
-		current_input_bytes[0] = input_data[index++];
+	for(index = 0; index < input_size; index += 3){
+		current_input_bytes[0] = input_data[index];
 		
-		if(index < input_size){
-			current_input_bytes[1] = input_data[index++];
+		if(index+1 < input_size){
+			current_input_bytes[1] = input_data[index+1];
 		}else{
 			current_input_bytes[1] = '\0';
-			num_padding = 2;
+			if(num_padding == 0) num_padding = 2;
 		}
 		
-		if(index < input_size){
-			current_input_bytes[2] = input_data[index++];
+		if(index+2 < input_size){
+			current_input_bytes[2] = input_data[index+2];
 		}else{
 			current_input_bytes[2] = '\0';
-			num_padding = 1;
+			if(num_padding == 0) num_padding = 1;
 		}
 		
 		/* this garbage actually works, somehow */
@@ -56,7 +63,6 @@ size_t base64_encode(char **output_string, unsigned char *input_data, size_t inp
 		/* match bottom 6 bits in char 2 */
 		current_output_sextets[3] = current_input_bytes[2] & 0x3F;
 		
-		size_t output_index;
 		for(output_index = 0; output_index < 4; output_index++){
 			output_buffer[output_index] = base64_table[(unsigned char) current_output_sextets[output_index]];
 		}
@@ -64,8 +70,8 @@ size_t base64_encode(char **output_string, unsigned char *input_data, size_t inp
 	}
 	
 	/* Go from len-(1+num_padding) to the end, replacing with = */
-	for(size_t padding_check_index = strlen(base64_encoded_string) - num_padding; padding_check_index < strlen(base64_encoded_string); padding_check_index++){
-		strncpy(base64_encoded_string + padding_check_index, "=", 2);
+	for(padding_check_index = strlen(base64_encoded_string) - num_padding; padding_check_index < strlen(base64_encoded_string); padding_check_index++){
+		base64_encoded_string[padding_check_index] = '=';
 	}
 	
 	if(*output_string == NULL) *output_string = malloc(base64_encoded_string_size);
@@ -96,20 +102,25 @@ size_t base64_decode(unsigned char **output_data, char *input_string){
 	const char *const base64_table = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 	
 	char *current_input_chars = malloc(5), *current_input_sextets = malloc(4), *output_buffer = NULL, base64index = 0;
-	current_input_chars[4] = '\0';
-	current_input_sextets[3] = '\0';
 	unsigned char *current_output_bytes = malloc(3);
-	current_output_bytes[2] = '\0';
+	
+	size_t num_padding;
+	size_t input_size;
+	size_t output_data_size;
+	size_t index, output_index, j;
 	
 	char *first_pad = strchr(input_string, '=');
 	/* If there is no padding, set first_pad to the index of the terminating null byte */
 	if(first_pad == NULL) first_pad = strchr(input_string, '\0');
+	num_padding = strlen(first_pad);
+	input_size = strlen(input_string) - num_padding;
+	output_data_size = ((input_size + num_padding) * 3) / 4;
+	output_index = 0;
 	
-	size_t num_padding = strlen(first_pad);
-	size_t input_size = strlen(input_string) - num_padding;
-	size_t output_data_size = ((input_size + num_padding) * 3) / 4;
 	output_buffer = malloc(output_data_size);
-	size_t index, output_index = 0, j;
+	current_input_chars[4] = '\0';
+	current_input_sextets[3] = '\0';
+	current_output_bytes[2] = '\0';
 	
 	for(index = 0; index < input_size; index += 4){
 		/* Make sure we are working with empty memory - strncpy won't replace any bytes after the first null, e.g. {'a', 'b', '\0', 'd', \0}
