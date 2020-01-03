@@ -2,6 +2,7 @@
 #include <string.h>
 #include <float.h>
 
+#include "../decrypt_single_byte_xor.h"
 #include "../repeating_key_xor.h"
 #include "../frequency_analysis.h"
 

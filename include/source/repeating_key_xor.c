@@ -1,5 +1,7 @@
 #include <stddef.h>
 
+#include "../repeating_key_xor.h"
+
 /*
  * Applies the given key of length key_size to input_data, repeating as many times as needed.
  * Adapted from fixed_xor(unsigned char *output_data, unsigned char *input_data, unsigned char *key, size_t size)

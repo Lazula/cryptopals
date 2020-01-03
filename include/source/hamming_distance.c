@@ -1,5 +1,7 @@
 #include <stddef.h>
 
+#include "../hamming_distance.h"
+
 /*
  * Hamming distance is the number of different bits between two strings of equal length, e.g. 0b1100 to 0b1011 has a Hamming distance 3
  * This can be easily calculated using XOR on each index and counting the '1' bits (use the example above to try it out yourself - 1100 ^ 1011 = 0111 -> 3)

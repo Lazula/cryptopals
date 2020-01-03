@@ -1,5 +1,7 @@
 #include <stddef.h>
 
+#include "../fixed_xor.h"
+
 /* 
  * Applies a key of length *size* to an input of length *size and places it in an output buffer of at least length *size*.
  * size should include space for a null-terminator

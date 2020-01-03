@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "../hex_decode.h"
+
 size_t hex_decode(unsigned char **output_data, char *input_string){
 	//Check for non-multiple of 2 length
 	if(strlen(input_string) % 2 != 0){

@@ -2,6 +2,8 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "../crypto_utility.h"
+
 /* 
  * Parameters:
  * **output: Automatically allocates *output for the correct size if == NULL

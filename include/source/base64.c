@@ -1,6 +1,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "../base64.h"
+
 /*
  * Parameters:
  * **output_string: Automatically allocates *output_string for the correct size if == NULL
