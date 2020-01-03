@@ -1,6 +1,6 @@
 for i in ./Set\ */*; do
   cd "$i"
-  echo "Running $i/compile.sh"
-  ./compile.sh
+  echo "Running $i Makefile"
+  make
   cd "$OLDPWD"
 done
