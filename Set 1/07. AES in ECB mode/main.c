@@ -5,7 +5,7 @@
 #include "../../include/base64.h"
 #include "../../include/aes.h"
 
-int main(int argc, char *argv[]){
+int main(){
 	FILE *data_file;
 	//input_buffer accepts up to 1MB-1 with lines up to the same length
 	size_t input_buffer_size = 1048576;
@@ -17,7 +17,7 @@ int main(int argc, char *argv[]){
 
 	data_file = fopen("data.txt", "r");
 	
-	while(getdelim((char **)&line_buffer, &line_buffer_size, '\n', data_file) > -1){
+	while(fgets(line_buffer, line_buffer_size, data_file) != NULL){
 		linebreak = strchr(line_buffer, '\n');
 		if(linebreak != NULL) *linebreak = '\0';
 		if(strlen(input_buffer) + strlen(line_buffer) > input_buffer_size){

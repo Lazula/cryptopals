@@ -9,21 +9,21 @@
 #include "../../include/hamming_distance.h"
 #include "../../include/decrypt_single_byte_xor.h"
 
-int main(int argc, char *argv[]){
+int main(){
 	FILE *data_file;
 	//input_buffer accepts up to 1MB-1 with lines up to the same length
 	size_t input_buffer_size = 1048576;
 	size_t line_buffer_size = input_buffer_size;
-	char *input_buffer = calloc(input_buffer_size, 1), *line_buffer = calloc(line_buffer_size, 1), *linebreak;
+	char *input_buffer = malloc(input_buffer_size), *line_buffer = malloc(line_buffer_size), *linebreak;
 	unsigned char *raw_encrypted_data = NULL;
 	
 	data_file = fopen("data.txt", "r");
 	
-	while(getdelim((char **) &line_buffer, &line_buffer_size, '\n', data_file) > -1){
-		linebreak = strchr(line_buffer, '\n');
-		if(linebreak != NULL) *linebreak = '\0';
+	//while(getdelim(&line_buffer, &line_buffer_size, '\n', data_file) > -1){
+	while(fgets(line_buffer, line_buffer_size, data_file) != NULL){
+		if((linebreak = strchr(line_buffer, '\n')) != NULL) *linebreak = '\0';
 		if(strlen(input_buffer) + strlen(line_buffer) > input_buffer_size){
-			printf("Input length too is greater than maximum size %zu\n", input_buffer_size);
+			printf("Input length is greater than maximum size %zu\n", input_buffer_size);
 			exit(EXIT_FAILURE);
 		}
 		strncat(input_buffer, line_buffer, line_buffer_size);
@@ -32,7 +32,6 @@ int main(int argc, char *argv[]){
 	fclose(data_file);
 	
 	//input_buffer is now a single block of b64-encoded data
-	
 	size_t raw_data_size = base64_decode(&raw_encrypted_data, input_buffer);
 	
 	free(input_buffer);
@@ -45,8 +44,8 @@ int main(int argc, char *argv[]){
 	for(keysize = 2; keysize <= 40; keysize++){
 		total_edit_distance = 0;
 		
-		byteset_one = calloc(keysize, 1);
-		byteset_two = calloc(keysize, 1);
+		byteset_one = malloc(keysize);
+		byteset_two = malloc(keysize);
 		
 		size_t num_trials = (raw_data_size / keysize) - 1;
 		
@@ -67,18 +66,17 @@ int main(int argc, char *argv[]){
 		free(byteset_one);
 		free(byteset_two);
 	}
-	
 	//printf("Most likely key length: %lu, with normalized edit distance of %lf.\nblocks to decrypt are %lu bytes long.\n", found_keysize, best_edit_distance, raw_data_size / found_keysize);
 	
 	size_t byteset_size = raw_data_size / found_keysize;
-	unsigned char *current_byteset = calloc(byteset_size, 1), *key = calloc(found_keysize, 1);
-	char *current_output = calloc(byteset_size+1, 1);
+	unsigned char *current_byteset = malloc(byteset_size), *key = malloc(found_keysize);
+	char *current_output = malloc(byteset_size+1);
 	unsigned char current_key_byte = 0;
 	size_t i, j;
 	for(i = 0; i < found_keysize; i++){
 		//printf("Working on set %lu\n", i);
 		//reset memory
-		memset(current_byteset, byteset_size, 0);
+		memset(current_byteset, 0, byteset_size);
 		for(j = 0; j < byteset_size; j++){
 			memcpy(current_byteset+j, raw_encrypted_data+((found_keysize*j)+i), 1);
 		}
@@ -90,7 +88,7 @@ int main(int argc, char *argv[]){
 	
 	size_t decrypted_string_size = raw_data_size;
 	char *decrypted_string = malloc(decrypted_string_size);
-	repeating_key_xor(decrypted_string, raw_encrypted_data, raw_data_size, key, found_keysize);
+	repeating_key_xor((unsigned char *) decrypted_string, raw_encrypted_data, raw_data_size, key, found_keysize);
 	decrypted_string[decrypted_string_size-1]= '\0';
 	
 	printf("%s", decrypted_string);

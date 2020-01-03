@@ -25,7 +25,7 @@ double decrypt_single_byte_xor(char *output, unsigned char *output_key, unsigned
 	do{
 		valid_ascii = 1;
 		current_key++;
-		repeating_key_xor(decrypted_string, input_data, input_size, &current_key, 1);
+		repeating_key_xor((unsigned char *) decrypted_string, input_data, input_size, &current_key, 1);
 		
 		for(i = 0; i < input_size; i++){
 			if((decrypted_string[i] < 32 || decrypted_string[i] > 126) && decrypted_string[i] != '\t' && decrypted_string[i] != '\n'){
@@ -44,7 +44,7 @@ double decrypt_single_byte_xor(char *output, unsigned char *output_key, unsigned
 		}
 	}while(current_key < 255);
 	
-	repeating_key_xor(decrypted_string, input_data, input_size, &best_key, 1);
+	repeating_key_xor((unsigned char *) decrypted_string, input_data, input_size, &best_key, 1);
 	*output_key = best_key;
 	
 	if(output != NULL){
@@ -75,7 +75,7 @@ double decrypt_single_byte_xor_fast(char *output,  unsigned char *output_key, un
 	do{
 		valid_ascii = 1;
 		current_key++;
-		repeating_key_xor(decrypted_string, input_data, input_size, &current_key, 1);
+		repeating_key_xor((unsigned char *) decrypted_string, input_data, input_size, &current_key, 1);
 		
 		for(i = 0; i < input_size; i++){
 			if((decrypted_string[i] < 32 || decrypted_string[i] > 126) && decrypted_string[i] != '\t' && decrypted_string[i] != '\n'){
@@ -94,7 +94,7 @@ double decrypt_single_byte_xor_fast(char *output,  unsigned char *output_key, un
 		}
 	}while(current_key < 255);
 	
-	repeating_key_xor(decrypted_string, input_data, input_size, &best_key, 1);
+	repeating_key_xor((unsigned char *) decrypted_string, input_data, input_size, &best_key, 1);
 	*output_key = best_key;
 	
 	if(output != NULL){

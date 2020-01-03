@@ -7,17 +7,18 @@
 #include "../../include/repeating_key_xor.h"
 #include "../../include/frequency_analysis.h"
 
-int main(int argc, char *argv[]){
+int main(){
 	FILE *data_file;
-	size_t data_buffer_size = 70;
-	unsigned char *hex_encoded_data = calloc(data_buffer_size, 1);
+	/*70*/
+	size_t data_buffer_size = 128;
+	char *hex_encoded_data = malloc(data_buffer_size);
 	unsigned char *raw_data = NULL;
+	char *linebreak;
 	
 	data_file = fopen("data.txt", "r");
-	getline((char **) &hex_encoded_data, &data_buffer_size, data_file);
+	fgets(hex_encoded_data, data_buffer_size, data_file);
 	fclose(data_file);
-	char *linebreak = strchr(hex_encoded_data, '\n');
-	if(linebreak != NULL) *linebreak = '\0';
+	if((linebreak = strchr(hex_encoded_data, '\n')) != NULL) *linebreak = '\0';
 	
 	size_t raw_data_size = hex_decode(&raw_data, hex_encoded_data);
 	
@@ -30,7 +31,7 @@ int main(int argc, char *argv[]){
 	do{
 		valid_ascii = 1;
 		current_key++;
-		repeating_key_xor(decrypted_string, raw_data, raw_data_size, &current_key, 1);
+		repeating_key_xor((unsigned char *) decrypted_string, raw_data, raw_data_size, &current_key, 1);
 		size_t i;
 		for(i = 0; i < raw_data_size; i++){
 			//any non-ascii character or null byte
@@ -49,7 +50,7 @@ int main(int argc, char *argv[]){
 		}
 	}while(current_key < 255);
 	
-	repeating_key_xor(decrypted_string, raw_data, raw_data_size, &best_key, 1);
+	repeating_key_xor((unsigned char *) decrypted_string, raw_data, raw_data_size, &best_key, 1);
 	
 	printf("Best answer \"%s\" from hex data \"%s\" with key %#02hhx\n", decrypted_string, hex_encoded_data, best_key);
 	

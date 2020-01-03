@@ -7,16 +7,15 @@
 
 unsigned char is_aes_ecb(unsigned char *data, size_t data_size, uint8_t key_type);
 
-int main(int argc, char *argv[]){
+int main(){
 	FILE *const data_file = fopen("data.txt", "r");
 	//line_buffer accepts up to 1MB-1
 	size_t line_buffer_size = 1048576;
 	char *line_buffer = malloc(line_buffer_size);
 	char *linebreak = NULL;
 	unsigned char *raw_encrypted_data = NULL;
-	unsigned char *decrypted_data = NULL;
 	
-	while(getdelim(&line_buffer, &line_buffer_size, '\n', data_file) > -1){
+	while(fgets(line_buffer, line_buffer_size, data_file) != NULL){
 		linebreak = strchr(line_buffer, '\n');
 		if(linebreak != NULL) *linebreak = '\0';
 		raw_encrypted_data = NULL;

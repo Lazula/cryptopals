@@ -5,7 +5,7 @@
 #include "../../include/base64.h"
 #include "../../include/aes.h"
 
-int main(int argc, char *argv[]){
+int main(){
 	FILE *data_file;
 	//input_buffer accepts up to 1MB-1 with lines up to the same length
 	size_t input_buffer_size = 1048576;
@@ -17,7 +17,7 @@ int main(int argc, char *argv[]){
 	
 	data_file = fopen("data.txt", "r");
 	
-	while(getdelim(&line_buffer, &line_buffer_size, '\n', data_file) > -1){
+	while(fgets(line_buffer, line_buffer_size, data_file) != NULL){
 		linebreak = strchr(line_buffer, '\n');
 		if(linebreak != NULL) *linebreak = '\0';
 		if(strlen(input_buffer) + strlen(line_buffer) > input_buffer_size){
@@ -42,7 +42,7 @@ int main(int argc, char *argv[]){
 	}
 	fclose(key_file);
 	
-	unsigned char *initialization_vector = "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
+	unsigned char *initialization_vector = (unsigned char *) "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
 	unsigned char *decrypted_data = NULL;
 	
 	size_t decrypted_data_size = aes_decrypt(&decrypted_data, raw_encrypted_data, raw_data_size, key, initialization_vector, AES_CIPHER_CBC, AES_KEY_128);

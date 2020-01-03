@@ -5,15 +5,14 @@
 #include "../../include/hex_encoding.h"
 #include "../../include/repeating_key_xor.h"
 
-int main(int argc, char *argv[]){
+int main(){
 	FILE *data_file;
 	size_t input_buffer_size = 1024;
-	size_t input_string_length, hex_encoded_output_size;
+	size_t input_string_length;
 	char *input_buffer = malloc(input_buffer_size);
 	
 	data_file = fopen("data.txt", "r");
 	
-	size_t i;
 	if(data_file != NULL){
 		fread(input_buffer, 1, input_buffer_size-1, data_file);
 	}
@@ -21,7 +20,7 @@ int main(int argc, char *argv[]){
 	
 	unsigned char *encrypted_data;
 	char *hex_encoded_encrypted_data = NULL, *linebreak;
-	unsigned char *key = "ICE";
+	char *key = "ICE";
 	size_t key_size = 3;
 	
 	linebreak = strrchr(input_buffer, '\n');
@@ -32,9 +31,9 @@ int main(int argc, char *argv[]){
 	
 	encrypted_data = malloc(input_string_length);
 	
-	repeating_key_xor(encrypted_data, input_buffer, input_string_length, key, key_size);
+	repeating_key_xor(encrypted_data, (unsigned char *) input_buffer, input_string_length, (unsigned char *) key, key_size);
 	
-	hex_encoded_output_size = hex_encode(&hex_encoded_encrypted_data, encrypted_data, input_string_length);
+	hex_encode(&hex_encoded_encrypted_data, encrypted_data, input_string_length);
 	
 	printf("%s\n", hex_encoded_encrypted_data);
 	

@@ -5,29 +5,36 @@
 #include "../../include/hex_encoding.h"
 #include "../../include/fixed_xor.h"
 
-int main(int argc, char *argv[]){
+int main(){
 	FILE *data_file;
 	FILE *key_file;
 	size_t data_buffer_size = 1024;
 	size_t key_buffer_size = data_buffer_size;
-	unsigned char *hex_encoded_data = calloc(data_buffer_size, 1);
-	unsigned char *hex_encoded_key = calloc(key_buffer_size, 1);
-	unsigned char *raw_data;
-	unsigned char *raw_key;
+	char *hex_encoded_data = malloc(data_buffer_size);
+	char *hex_encoded_key = malloc(key_buffer_size);
+	char *linebreak;
+	unsigned char *raw_data = NULL;
+	unsigned char *raw_key = NULL;
 	
 	data_file = fopen("data.txt", "r");
-	fscanf(data_file, "%1023s", hex_encoded_data);
+	fgets(hex_encoded_data, data_buffer_size, data_file);
+	if((linebreak = strchr(hex_encoded_data, '\n')) != NULL) *linebreak = '\0';
 	fclose(data_file);
 	
 	size_t raw_data_size = hex_decode(&raw_data, hex_encoded_data);
 	
 	key_file = fopen("key.txt", "r");
-	fscanf(key_file, "%1023s", hex_encoded_key);
+	fgets(hex_encoded_key, key_buffer_size, key_file);
+	if((linebreak = strchr(hex_encoded_key, '\n')) != NULL) *linebreak = '\0';
 	fclose(key_file);
 	
 	size_t raw_key_size = hex_decode(&raw_key, hex_encoded_key);
+	if(raw_data_size != raw_key_size){
+		printf("Data and key size differ. Cannot use fixed_xor.");
+		exit(EXIT_FAILURE);
+	}
 	
-	unsigned char *decrypted_data = calloc(raw_data_size, 1);
+	unsigned char *decrypted_data = malloc(raw_data_size);
 	
 	fixed_xor(decrypted_data, raw_data, raw_key, raw_data_size);
 		

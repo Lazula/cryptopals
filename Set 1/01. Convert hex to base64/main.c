@@ -5,18 +5,20 @@
 #include "../../include/hex_encoding.h"
 #include "../../include/base64.h"
 
-int main(int argc, char *argv[]){
+int main(){
 	FILE *input_file;
 	
 	size_t input_buffer_size = 1024;
-	unsigned char *hex_encoded_string = calloc(input_buffer_size, 1);
+	char *hex_encoded_string = malloc(input_buffer_size);
+	char *linebreak;
 	
 	input_file = fopen("input.txt", "r");
 	
-	fscanf(input_file, "%1023s", hex_encoded_string);
+	fgets(hex_encoded_string, input_buffer_size, input_file);
+	if((linebreak = strchr(hex_encoded_string, '\n')) != NULL) *linebreak = '\0';
 	fclose(input_file);
 	
-	unsigned char *raw_data;
+	unsigned char *raw_data = NULL;
 	size_t raw_data_size = hex_decode(&raw_data, hex_encoded_string);
 	
 	char *base64_encoded_text = NULL;

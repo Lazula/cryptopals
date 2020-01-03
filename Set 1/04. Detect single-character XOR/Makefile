@@ -1,6 +1,6 @@
 CC=cc
-#-Wall -Wextra -std=c89 -pedantic to be added later
-CFLAGS=-g
+#-std=c89 -pedantic to be added later
+CFLAGS=-g -Wall -Wextra
 
 INC_DIR=../../include/source
 LOCAL_INCLUDES=$(INC_DIR)/hex_encoding.c $(INC_DIR)/decrypt_single_byte_xor.c $(INC_DIR)/repeating_key_xor.c $(INC_DIR)/frequency_analysis.c
