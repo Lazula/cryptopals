@@ -107,31 +107,50 @@ static const uint32_t round_constants[10] = {
  */
 size_t aes_encrypt(unsigned char **output, unsigned char *input, size_t input_size, unsigned char *key, unsigned char *initialization_vector, uint8_t cipher_type, uint8_t key_type){
 	uint8_t *padded_input = NULL;
-	size_t padded_input_size = pkcs7_pad(&padded_input, input, input_size, 16);
-	uint8_t *ciphertext = malloc(padded_input_size);
-	*output = malloc(padded_input_size);
-
-	size_t output_size = padded_input_size;
+	size_t padded_input_size;
+	uint8_t *ciphertext;
+	size_t output_size;
+	struct aes_state *state;
+	struct aes_state *prev_state;
+	struct aes_key *key_schedule[15];
 	
-	struct aes_state *state = malloc(sizeof(struct aes_state));
+	uint8_t i, j;
+	size_t state_index;
+	
+	uint8_t *input_ptr;
+	uint8_t *output_ptr;
+	
+	
+	padded_input_size = pkcs7_pad(&padded_input, input, input_size, 16);
+	ciphertext = malloc(padded_input_size);
+	
+	if(output != NULL){
+		if(*output == NULL){
+			*output = malloc(padded_input_size);
+		}
+	}
+
+	output_size = padded_input_size;
+	
+	state = malloc(sizeof(struct aes_state));
 	state -> key_type = key_type;
 	state -> cipher_type = cipher_type;
 	
-	struct aes_state *prev_state = NULL;
+	prev_state = NULL;
 	if(cipher_type == AES_CIPHER_CBC) prev_state = malloc(sizeof(struct aes_state));
 	
-	struct aes_key *key_schedule[15];
-	for(uint8_t i = 0; i < 15; i++) key_schedule[i] = malloc(sizeof(struct aes_key));
+	for(i = 0; i < 15; i++) key_schedule[i] = malloc(sizeof(struct aes_key));
 		
 	expand_key(key_schedule, state -> key_type, key);
 	
-	for(size_t state_index = 0; state_index < padded_input_size; state_index += 16){
-		uint8_t *input_ptr = (uint8_t *)(padded_input+state_index);
-		for(uint8_t i = 0; i < 4; i++){
-			for(uint8_t j = 0; j < 4; j++){
+	for(state_index = 0; state_index < padded_input_size; state_index += 16){
+		input_ptr = (uint8_t *)(padded_input+state_index);
+		for(i = 0; i < 4; i++){
+			for(j = 0; j < 4; j++){
 				/*
 				 * AES states organize the data by column 
 				 * "AAAABBBBCCCCDDDD"
+				 * is placed in the matrix as follows:
 				 * A B C D
 				 * A B C D
 				 * A B C D
@@ -144,15 +163,15 @@ size_t aes_encrypt(unsigned char **output, unsigned char *input, size_t input_si
 		if(cipher_type == AES_CIPHER_CBC){
 			if(state_index == 0){
 				/* Apply IV */
-				for(uint8_t i = 0; i < 4; i++){
-					for(uint8_t j = 0; j < 4; j++){
+				for(i = 0; i < 4; i++){
+					for(j = 0; j < 4; j++){
 						state -> bytes[i][j] ^= *(initialization_vector+(j*4)+i);
 					}
 				}
 			}else{
 				/* Apply previous ciphertext block */
-				for(uint8_t i = 0; i < 4; i++){
-					for(uint8_t j = 0; j < 4; j++){
+				for(i = 0; i < 4; i++){
+					for(j = 0; j < 4; j++){
 						state -> bytes[i][j] ^= prev_state -> bytes[i][j];
 					}
 				}
@@ -160,18 +179,18 @@ size_t aes_encrypt(unsigned char **output, unsigned char *input, size_t input_si
 		}
 		
 		cipher(state, key_schedule);
-		memcpy(prev_state, state, sizeof(struct aes_state));
+		if(cipher_type == AES_CIPHER_CBC) memcpy(prev_state, state, sizeof(struct aes_state));
 		
-		uint8_t *output_ptr = (uint8_t *)((*output)+state_index);
-		for(uint8_t i = 0; i < 4; i++){
-			for(uint8_t j = 0; j < 4; j++){
+		output_ptr = (uint8_t *)((*output)+state_index);
+		for(i = 0; i < 4; i++){
+			for(j = 0; j < 4; j++){
 				*(output_ptr+(j*4)+i) = state -> bytes[i][j];
 			}
 		}
 	}
 	
 	if(cipher_type == AES_CIPHER_CBC) free(prev_state);	
-	for(uint8_t i = 0; i < 15; i++) free(key_schedule[i]);
+	for(i = 0; i < 15; i++) free(key_schedule[i]);
 	free(state);
 	free(ciphertext);
 	free(padded_input);
@@ -188,6 +207,8 @@ size_t aes_encrypt(unsigned char **output, unsigned char *input, size_t input_si
  */
 void cipher(struct aes_state *state, struct aes_key *key_schedule[15]){
 	uint8_t rounds;
+	uint8_t round;
+	
 	switch(state -> key_type){
 		/* 128 */
 		case 0:
@@ -202,7 +223,7 @@ void cipher(struct aes_state *state, struct aes_key *key_schedule[15]){
 			rounds = 14;
 			break;
 		default:
-			fprintf(stderr, "Invalid cipher type in %s on line %d in file %s.\n", __func__, __LINE__, __FILE__);
+			fprintf(stderr, "Invalid cipher type in cipher() on line %d in file %s.\n", __LINE__, __FILE__);
 			exit(EXIT_FAILURE);
 			break;
 	}
@@ -211,7 +232,7 @@ void cipher(struct aes_state *state, struct aes_key *key_schedule[15]){
 	add_round_key(state, key_schedule[0]);
 	
 	/* Middle rounds (1 -> rounds-1) */
-	for(uint8_t round = 1; round < rounds; round++){
+	for(round = 1; round < rounds; round++){
 		sub_bytes(state);
 		shift_rows(state);
 		mix_columns(state);
@@ -240,28 +261,38 @@ void cipher(struct aes_state *state, struct aes_key *key_schedule[15]){
  */
 size_t aes_decrypt(unsigned char **output, unsigned char *input, size_t input_size, unsigned char *key, unsigned char *initialization_vector, uint8_t cipher_type, uint8_t key_type){
 	uint8_t *cleartext = malloc(input_size);
+	struct aes_state *state;
+	struct aes_state *prev_state = NULL;
+	struct aes_state *temp_state = NULL;
+	struct aes_key *key_schedule[15];
 	
-	struct aes_state *state = malloc(sizeof(struct aes_state));
+	size_t state_index;
+	uint8_t i, j;
+	
+	uint8_t *input_ptr;
+	uint8_t *cleartext_ptr;
+	
+	size_t unpadded_output_size;
+	
+	state = malloc(sizeof(struct aes_state));
 	state -> key_type = key_type;
 	state -> cipher_type = cipher_type;
 	
-	struct aes_state *prev_state = NULL, *temp_state = NULL;
 	if(cipher_type == AES_CIPHER_CBC){
 		prev_state = malloc(sizeof(struct aes_state));
 		temp_state = malloc(sizeof(struct aes_state));
 	}
 	
-	struct aes_key *key_schedule[15];
-	for(uint8_t i = 0; i < 15; i++){
+	for(i = 0; i < 15; i++){
 		key_schedule[i] = malloc(sizeof(struct aes_key));
 	}
 	
 	expand_key(key_schedule, state -> key_type, key);
 	
-	for(size_t state_index = 0; state_index < input_size; state_index += 16){
-		uint8_t *input_ptr = (uint8_t *)(input+state_index);
-		for(uint8_t i = 0; i < 4; i++){
-			for(uint8_t j = 0; j < 4; j++){
+	for(state_index = 0; state_index < input_size; state_index += 16){
+		input_ptr = (uint8_t *)(input+state_index);
+		for(i = 0; i < 4; i++){
+			for(j = 0; j < 4; j++){
 				state -> bytes[i][j] = *(input_ptr+(j*4)+i);
 			}
 		}
@@ -275,15 +306,15 @@ size_t aes_decrypt(unsigned char **output, unsigned char *input, size_t input_si
 		if(cipher_type == AES_CIPHER_CBC){
 			if(state_index == 0){
 				/* Apply IV */
-				for(uint8_t i = 0; i < 4; i++){
-					for(uint8_t j = 0; j < 4; j++){
+				for(i = 0; i < 4; i++){
+					for(j = 0; j < 4; j++){
 						state -> bytes[i][j] ^= *(initialization_vector+(j*4)+i);
 					}
 				}
 			}else{
 				/* Apply previous ciphertext block */
-				for(uint8_t i = 0; i < 4; i++){
-					for(uint8_t j = 0; j < 4; j++){
+				for(i = 0; i < 4; i++){
+					for(j = 0; j < 4; j++){
 						state -> bytes[i][j] ^= prev_state -> bytes[i][j];
 					}
 				}
@@ -294,21 +325,21 @@ size_t aes_decrypt(unsigned char **output, unsigned char *input, size_t input_si
 			memcpy(prev_state, temp_state, sizeof(struct aes_state));
 		}
 		
-		uint8_t *cleartext_ptr = (uint8_t *)(cleartext+state_index);
-		for(uint8_t i = 0; i < 4; i++){
-			for(uint8_t j = 0; j < 4; j++){
+		cleartext_ptr = (uint8_t *)(cleartext+state_index);
+		for(i = 0; i < 4; i++){
+			for(j = 0; j < 4; j++){
 				*(cleartext_ptr+(j*4)+i) = state -> bytes[i][j];
 			}
 		}
 	}
-		
-	size_t unpadded_output_size = pkcs7_unpad(output, cleartext, input_size, 16);
+	
+	unpadded_output_size = pkcs7_unpad(output, cleartext, input_size, 16);
 	
 	if(cipher_type == AES_CIPHER_CBC){
 		free(prev_state);
 		free(temp_state);
 	}
-	for(uint8_t i = 0; i < 15; i++) free(key_schedule[i]);
+	for(i = 0; i < 15; i++) free(key_schedule[i]);
 	free(state);
 	free(cleartext);
 	
@@ -324,6 +355,8 @@ size_t aes_decrypt(unsigned char **output, unsigned char *input, size_t input_si
  */
 void inv_cipher(struct aes_state *state, struct aes_key *key_schedule[15]){
 	uint8_t rounds;
+	uint8_t round;
+	
 	switch(state -> key_type){
 		/* 128 */
 		case 0:
@@ -338,7 +371,7 @@ void inv_cipher(struct aes_state *state, struct aes_key *key_schedule[15]){
 			rounds = 14;
 			break;
 		default:
-			fprintf(stderr, "Invalid cipher type in %s on line %d in file %s.\n", __func__, __LINE__, __FILE__);
+			fprintf(stderr, "Invalid cipher type in inv_cipher() on line %d in file %s.\n", __LINE__, __FILE__);
 			exit(EXIT_FAILURE);
 			break;
 	}
@@ -347,7 +380,7 @@ void inv_cipher(struct aes_state *state, struct aes_key *key_schedule[15]){
 	add_round_key(state, key_schedule[rounds]);
 		
 	/* Middle rounds (1 -> rounds-1) */
-	for(uint8_t round = rounds-1; round > 0; round--){
+	for(round = rounds-1; round > 0; round--){
 		inv_shift_rows(state);
 		inv_sub_bytes(state);
 		add_round_key(state, key_schedule[round]);
@@ -371,8 +404,13 @@ void inv_cipher(struct aes_state *state, struct aes_key *key_schedule[15]){
 void expand_key(struct aes_key *key_schedule[15], uint8_t key_type, uint8_t *key){
 	/* AES-256 generates 15 keys, 128 and 192 generate fewer */
 	uint32_t all_words[60];
-	uint32_t temp;
 	uint8_t words_in_key, num_rounds;
+	
+	uint32_t temp;
+	uint8_t *temp_ptr;
+	uint8_t *word_ptr;
+	
+	uint8_t i, j, k;
 	
 	switch(key_type){
 		/* AES-128 */
@@ -391,20 +429,20 @@ void expand_key(struct aes_key *key_schedule[15], uint8_t key_type, uint8_t *key
 			num_rounds = 14;
 			break;
 		default:
-			fprintf(stderr, "Invalid cipher type in %s on line %d in file %s.\n", __func__, __LINE__, __FILE__);
+			fprintf(stderr, "Invalid cipher type in expand_key() on line %d in file %s.\n", __LINE__, __FILE__);
 			exit(EXIT_FAILURE);
 	}
 	
 	/* Copy initial words into word array */
-	for(uint8_t i = 0; i < words_in_key; i++){
+	for(i = 0; i < words_in_key; i++){
 		memcpy(&all_words[i], key+(i*4), 4);
 		
 		/* Account for little-endianness */
-		uint32_t temp = all_words[i];
-		uint8_t *temp_ptr = (uint8_t *) &temp;
-		uint8_t *word_ptr = (uint8_t *) &all_words[i];
+		temp = all_words[i];
+		temp_ptr = (uint8_t *) &temp;
+		word_ptr = (uint8_t *) &all_words[i];
 		
-		for(uint8_t j = 0; j < 4; j++){
+		for(j = 0; j < 4; j++){
 			temp_ptr[j] = word_ptr[3-j];
 		}
 		
@@ -412,7 +450,7 @@ void expand_key(struct aes_key *key_schedule[15], uint8_t key_type, uint8_t *key
 	}
 	
 	/* Key expansion */
-	for(uint8_t i = words_in_key; i < (4 * (num_rounds+1)); i++){
+	for(i = words_in_key; i < (4 * (num_rounds+1)); i++){
 		temp = all_words[i-1];
 		if(i % words_in_key == 0){
 			temp = sub_word(rot_word(temp)) ^ round_constants[(i / words_in_key)-1];
@@ -423,15 +461,12 @@ void expand_key(struct aes_key *key_schedule[15], uint8_t key_type, uint8_t *key
 	}
 	
 	/* Copy words into key schedule */
-	for(uint8_t i = 0; i < 15; i++){
-		uint32_t current_word;
-		uint8_t *word_ptr;
-		
-		for(uint8_t j = 0; j < 4; j++){
-			current_word = all_words[i*4+j];
-			word_ptr = (uint8_t *) &current_word;
+	for(i = 0; i < 15; i++){
+		for(j = 0; j < 4; j++){
+			temp = all_words[i*4+j];
+			word_ptr = (uint8_t *) &temp;
 			
-			for(uint8_t k = 0; k < 4; k++){
+			for(k = 0; k < 4; k++){
 				key_schedule[i] -> bytes[k][j] = word_ptr[3-k];
 			}
 		}
@@ -442,8 +477,9 @@ void expand_key(struct aes_key *key_schedule[15], uint8_t key_type, uint8_t *key
  * Apply the key for the current round.
  */
 void add_round_key(struct aes_state *state, struct aes_key *current_key){
-	for(uint8_t i = 0; i < 4; i++){
-		for(uint8_t j = 0; j < 4; j++){
+	uint8_t i, j;
+	for(i = 0; i < 4; i++){
+		for(j = 0; j < 4; j++){
 			state -> bytes[i][j] ^= current_key -> bytes[i][j];
 		}
 	}
@@ -453,8 +489,10 @@ void add_round_key(struct aes_state *state, struct aes_key *current_key){
  * Apply the Rinjdael substitution box to the current state
  */
 void sub_bytes(struct aes_state *state){
-	for(uint8_t i = 0; i < 4; i++){
-		for(uint8_t j = 0; j < 4; j++){
+	uint8_t i, j;
+	
+	for(i = 0; i < 4; i++){
+		for(j = 0; j < 4; j++){
 			state -> bytes[i][j] = sub_box[state -> bytes[i][j]];
 		}
 	}
@@ -465,8 +503,9 @@ void sub_bytes(struct aes_state *state){
  */
 void mix_columns(struct aes_state *state){
 	uint8_t temp[4];
+	uint8_t i;
 	
-	for(uint8_t i = 0; i < 4; i++){
+	for(i = 0; i < 4; i++){
 		temp[0] = gf_mult(state -> bytes[0][i], 2) ^ gf_mult(state -> bytes[1][i], 3) ^ state -> bytes[2][i] ^ state -> bytes[3][i];
 		temp[1] = state -> bytes[0][i] ^ gf_mult(state -> bytes[1][i], 2) ^ gf_mult(state -> bytes[2][i], 3) ^ state -> bytes[3][i];
 		temp[2] = state -> bytes[0][i] ^ state -> bytes[1][i] ^ gf_mult(state -> bytes[2][i], 2) ^ gf_mult(state -> bytes[3][i], 3);
@@ -515,8 +554,9 @@ void shift_rows(struct aes_state *state){
  */
 void inv_mix_columns(struct aes_state *state){	
 	uint8_t temp[4];
+	uint8_t i;
 	
-	for(uint8_t i = 0; i < 4; i++){
+	for(i = 0; i < 4; i++){
 		temp[0] = gf_mult(state -> bytes[0][i], 14) ^ gf_mult(state -> bytes[1][i], 11) ^ gf_mult(state -> bytes[2][i], 13) ^ gf_mult(state -> bytes[3][i], 9);
 		temp[1] = gf_mult(state -> bytes[0][i], 9) ^ gf_mult(state -> bytes[1][i], 14) ^ gf_mult(state -> bytes[2][i], 11) ^ gf_mult(state -> bytes[3][i], 13);
 		temp[2] = gf_mult(state -> bytes[0][i], 13) ^ gf_mult(state -> bytes[1][i], 9) ^ gf_mult(state -> bytes[2][i], 14) ^ gf_mult(state -> bytes[3][i], 11);
@@ -564,8 +604,10 @@ void inv_shift_rows(struct aes_state *state){
  * Apply inverse Rijndael substitution box
  */
 void inv_sub_bytes(struct aes_state *state){
-	for(uint8_t i = 0; i < 4; i++){
-		for(uint8_t j = 0; j < 4; j++){
+	uint8_t i, j;
+	
+	for(i = 0; i < 4; i++){
+		for(j = 0; j < 4; j++){
 			state -> bytes[i][j] = inv_sub_box[state -> bytes[i][j]];
 		}
 	}
@@ -576,8 +618,9 @@ void inv_sub_bytes(struct aes_state *state){
  */
 uint32_t sub_word(uint32_t word){
 	uint8_t *word_as_uint8_t_ptr = (uint8_t *) &word;
+	uint8_t i;
 	
-	for(uint8_t i = 0; i < 4; i++){
+	for(i = 0; i < 4; i++){
 		/* Cast as uint8_t * in order to address by byte index */
 		word_as_uint8_t_ptr[i] = sub_box[word_as_uint8_t_ptr[i]];
 	}
@@ -590,12 +633,16 @@ uint32_t sub_word(uint32_t word){
  */
 uint32_t rot_word(uint32_t word){
 	uint8_t bytes[4];
+	uint32_t out_word;
+	uint8_t *out_word_ptr = (uint8_t *) &out_word;
+	
+	uint8_t i;
+	uint8_t temp;
+	
 	/* Account for little-endianness */
-	for(uint8_t i = 0; i < 4; i++){
+	for(i = 0; i < 4; i++){
 		bytes[i] = ((uint8_t *) &word)[3-i];
 	}
-	
-	uint8_t temp;
 	
 	/* Rotate */
 	temp = bytes[0];
@@ -604,11 +651,9 @@ uint32_t rot_word(uint32_t word){
 	bytes[2] = bytes[3];
 	bytes[3] = temp;
 	
-	uint32_t out_word;
-	uint8_t *out_word_ptr = (uint8_t *) &out_word;
 	
 	/* Return to little-endian */
-	for(uint8_t i = 0; i < 4; i++){
+	for(i = 0; i < 4; i++){
 		out_word_ptr[i] = bytes[3-i];
 	}
 	
@@ -620,12 +665,15 @@ uint32_t rot_word(uint32_t word){
  */
 uint8_t gf_mult(uint8_t multiplicand, uint8_t multiplier){
 	uint8_t result = 0;
-	for(uint8_t i = 0; i < 8; i++){
+	uint8_t msb;
+	uint8_t i;
+	
+	for(i = 0; i < 8; i++){
 		if(multiplier & 1){
 			result ^= multiplicand;
 		}
 		
-		uint8_t msb = multiplicand & 0x80;
+		msb = multiplicand & 0x80;
 		multiplicand <<= 1;
 		if(msb){
 			multiplicand ^= 0x1B;
@@ -641,8 +689,9 @@ uint8_t gf_mult(uint8_t multiplicand, uint8_t multiplier){
  * Dump an AES state to stdout
  */
 void dump_state(struct aes_state *state){
-	for(uint8_t i = 0; i < 4; i++){
-		printf("%02hhx %02hhx %02hhx %02hhx\n", state -> bytes[i][0], state -> bytes[i][1], state -> bytes[i][2], state -> bytes[i][3]);
+	uint8_t i;
+	for(i = 0; i < 4; i++){
+		printf("%02x %02x %02x %02x\n", state -> bytes[i][0], state -> bytes[i][1], state -> bytes[i][2], state -> bytes[i][3]);
 	}
 	puts("\n");
 }
@@ -652,8 +701,9 @@ void dump_state(struct aes_state *state){
  * Dump an AES schedule key to stdout
  */
 void dump_key(struct aes_key *key){
-	for(uint8_t i = 0; i < 4; i++){
-		printf("%02hhx %02hhx %02hhx %02hhx\n", key -> bytes[i][0], key -> bytes[i][1], key -> bytes[i][2], key -> bytes[i][3]);
+	uint8_t i;
+	for(i = 0; i < 4; i++){
+		printf("%02x %02x %02x %02x\n", key -> bytes[i][0], key -> bytes[i][1], key -> bytes[i][2], key -> bytes[i][3]);
 	}
 	puts("\n");
 }

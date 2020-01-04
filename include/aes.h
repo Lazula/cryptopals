@@ -1,6 +1,17 @@
 #ifndef AES_H
 #define AES_H
 
+/* contains CHAR_BIT */
+#include <limits.h>
+
+/* Trying to do this stuff when char is not 8 bits is hard and
+ * I don't know how to effectively test it
+ */
+#if CHAR_BIT != 8
+#error "CHAR_BIT != 8. Could cause severe bugs. Refusing to compile."
+#endif
+
+
 #include <stdint.h>
 #include "crypto_utility.h"
 

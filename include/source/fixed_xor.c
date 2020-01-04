@@ -3,11 +3,9 @@
 #include "../fixed_xor.h"
 
 /* 
- * Applies a key of length *size* to an input of length *size and places it in an output buffer of at least length *size*.
- * size should include space for a null-terminator
- * Error cases:
- * Providing either input_string or key of non-'size' length causes undefined behavior.
- * The function trusts that it is being given valid input.
+ * Applies a key of length *size* to an input of length *size and places it in an output buffer.
+ * The output buffer may be larger than size, but not smaller.
+ * The data is treated as binary. If you want to store the output as text, the output buffer should be size+1 with a null byte at the end.
  */
 void fixed_xor(unsigned char *output_data, unsigned char *input_data, unsigned char *key, size_t size){
 	size_t i;

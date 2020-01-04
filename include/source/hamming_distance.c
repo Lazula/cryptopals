@@ -13,7 +13,7 @@ unsigned int hamming_distance(char *data1, char *data2, size_t input_size){
 	
 	size_t i;
 	for(i = 0; i < input_size; i++){
-		//check lowest bit and then shift
+		/* check lowest bit and then shift */
 		for(current_byte = ((unsigned char) data1[i]) ^ ((unsigned char) data2[i]); current_byte > 0; current_byte >>= 1){
 			if(current_byte & 1) distance++;
 		}
@@ -22,3 +22,20 @@ unsigned int hamming_distance(char *data1, char *data2, size_t input_size){
 	return distance;
 }
 
+/* 
+ * Same as normal hamming distance, but designed to work for raw data in the form of unsigned chars.
+ */
+unsigned int uchar_hamming_distance(unsigned char *data1, unsigned char *data2, size_t input_size){
+	unsigned int distance = 0;
+	unsigned char current_byte;
+	
+	size_t i;
+	for(i = 0; i < input_size; i++){
+		/* check lowest bit and then shift */
+		for(current_byte = data1[i] ^ data2[i]; current_byte > 0; current_byte >>= 1){
+			if(current_byte & 1) distance++;
+		}
+	}
+	
+	return distance;
+}

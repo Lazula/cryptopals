@@ -17,16 +17,23 @@
  * Add PKCS#7 padding to input with given block size.
  */
 size_t pkcs7_pad(unsigned char **output, unsigned char *input, size_t input_size, size_t block_size){
+	size_t padding_amount;
+	size_t output_size;
+	
 	/* 16 - (24 % 16) = 8 padding*/
-	size_t padding_amount = block_size - (input_size % block_size);
+	padding_amount = block_size - (input_size % block_size);
 	
 	/* Account for 16 - ([multiple of 16] % 16) = 16 */
 	if(padding_amount == block_size) padding_amount = 0;
 	
-	size_t output_size = input_size + padding_amount;
+	output_size = input_size + padding_amount;
 	
 	/* Avoid memory leakage, only overwrite null pointer */
-	if(*output == NULL) *output = malloc(output_size);
+	if(output != NULL){
+		if(*output == NULL){
+			*output = malloc(output_size);
+		}
+	}
 	
 	/* Copy data into *output and apply padding, if applicable */
 	memcpy(*output, input, input_size);
@@ -50,10 +57,10 @@ size_t pkcs7_pad(unsigned char **output, unsigned char *input, size_t input_size
 size_t pkcs7_unpad(unsigned char **output, unsigned char *input, size_t input_size, size_t block_size){
 	unsigned char last_char = input[input_size-1];
 	unsigned char *padding_ptr = input+input_size-last_char;
+	unsigned char *pad_check_buf = NULL;
 	size_t output_size = input_size;
 	
 	/* padding chars cannot be >= block_size or == \0 */
-	unsigned char *pad_check_buf = NULL;
 	if(last_char < block_size && last_char > 0){
 		pad_check_buf = malloc(last_char);
 		memset(pad_check_buf, last_char, last_char);
