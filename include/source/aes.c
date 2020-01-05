@@ -707,3 +707,53 @@ void dump_key(struct aes_key *key){
 	}
 	puts("\n");
 }
+
+/* 
+ * Checks for duplicate AES blocks. If any are found based on given key type, very likely to be ECB
+ * Returns: 0 on success (if at least 2 blocks are the same)
+ * 1 on failure (no match)
+ * -1 on invalid key type
+ */
+signed char is_aes_ecb(unsigned char *data, size_t data_size, uint8_t key_type){
+	/* Break data into blocks of block_size and check for duplicates */
+	size_t block_size, blocks;
+	unsigned char *current_i_block, *current_j_block;
+	size_t i, j;
+
+	switch(key_type){
+		case AES_KEY_128:
+			block_size = 16;
+			break;
+		case AES_KEY_192:
+			block_size = 24;
+			break;
+		case AES_KEY_256:
+			block_size = 32;
+			break;
+		default:
+			/* Invalid key type */
+			return -1;
+			break;
+	}
+	
+	current_i_block = malloc(block_size);
+	current_j_block = malloc(block_size);
+	blocks = data_size / block_size;
+
+	for(i = 0; i < blocks; i++){
+		memcpy(current_i_block, data+(i*block_size), block_size);
+		for(j = i + 1; j < blocks; j++){
+			memcpy(current_j_block, data+(j*block_size), block_size);
+			if(!memcmp(current_i_block, current_j_block, block_size)){
+				free(current_i_block);
+				free(current_j_block);
+				return 0;
+			}
+		}
+	}
+	
+	free(current_i_block);
+	free(current_j_block);
+
+	return 1;
+}

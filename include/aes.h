@@ -26,5 +26,6 @@
 
 size_t aes_encrypt(unsigned char **output, unsigned char *input, size_t input_size, unsigned char *key, unsigned char *initialization_vector, uint8_t cipher_type, uint8_t key_type);
 size_t aes_decrypt(unsigned char **output, unsigned char *input, size_t input_size, unsigned char *key, unsigned char *initialization_vector, uint8_t cipher_type, uint8_t key_type);
+signed char is_aes_ecb(unsigned char *data, size_t data_size, uint8_t key_type);
 
 #endif
