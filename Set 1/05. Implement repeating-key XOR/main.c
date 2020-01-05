@@ -5,11 +5,16 @@
 #include "../../include/hex_encoding.h"
 #include "../../include/repeating_key_xor.h"
 
-int main(){
+int main(void){
 	FILE *data_file;
 	size_t input_buffer_size = 1024;
 	size_t input_string_length;
 	char *input_buffer = malloc(input_buffer_size);
+	
+	unsigned char *encrypted_data;
+	char *hex_encoded_encrypted_data = NULL, *linebreak;
+	char *key = "ICE";
+	size_t key_size = 3;
 	
 	data_file = fopen("data.txt", "r");
 	
@@ -18,14 +23,8 @@ int main(){
 	}
 	input_buffer[input_buffer_size-1] = '\0';
 	
-	unsigned char *encrypted_data;
-	char *hex_encoded_encrypted_data = NULL, *linebreak;
-	char *key = "ICE";
-	size_t key_size = 3;
-	
-	linebreak = strrchr(input_buffer, '\n');
-	//delete last linebreak, if it exists
-	if(linebreak != NULL) *linebreak = '\0';
+	/* delete last linebreak, if it exists */
+	if((linebreak = strrchr(input_buffer, '\n')) != NULL) *linebreak = '\0';
 	
 	input_string_length = strlen(input_buffer);
 	
@@ -43,4 +42,6 @@ int main(){
 	free(hex_encoded_encrypted_data);
 	
 	fclose(data_file);
+
+	return 0;
 }

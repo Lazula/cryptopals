@@ -5,11 +5,14 @@
 #include "../../include/hex_encoding.h"
 #include "../../include/base64.h"
 
-int main(){
+int main(void){
 	FILE *input_file;
 	
 	size_t input_buffer_size = 1024;
 	char *hex_encoded_string = malloc(input_buffer_size);
+	unsigned char *raw_data = NULL;
+	size_t raw_data_size;
+	char *base64_encoded_string = NULL;
 	char *linebreak;
 	
 	input_file = fopen("input.txt", "r");
@@ -18,15 +21,15 @@ int main(){
 	if((linebreak = strchr(hex_encoded_string, '\n')) != NULL) *linebreak = '\0';
 	fclose(input_file);
 	
-	unsigned char *raw_data = NULL;
-	size_t raw_data_size = hex_decode(&raw_data, hex_encoded_string);
+	raw_data_size = hex_decode(&raw_data, hex_encoded_string);
 	
-	char *base64_encoded_text = NULL;
-	base64_encode(&base64_encoded_text, raw_data, raw_data_size);
+	base64_encode(&base64_encoded_string, raw_data, raw_data_size);
 	
-	printf("%s\n", base64_encoded_text);
+	printf("%s\n", base64_encoded_string);
 	
 	free(hex_encoded_string);
-	free(base64_encoded_text);
+	free(base64_encoded_string);
 	free(raw_data);
+	
+	return 0;
 }

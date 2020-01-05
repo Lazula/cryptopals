@@ -1,6 +1,5 @@
 CC=cc
-#-std=c89 -pedantic to be added later
-CFLAGS=-g -Wall -Wextra
+CFLAGS=-g -Wall -Wextra -std=c89 -pedantic
 INC_DIR=../../include/source
 LOCAL_INCLUDES=$(INC_DIR)/base64.c $(INC_DIR)/aes.c $(INC_DIR)/crypto_utility.c
 

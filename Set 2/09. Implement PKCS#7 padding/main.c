@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "../../include/crypto_utility.h"
+#include "../../include/hex_encoding.h"
 
 int main(){
 	char *input = "YELLOW SUBMARINE";
@@ -11,6 +12,7 @@ int main(){
 	const size_t block_size = 20;
 	size_t padded_data_size;
 	size_t padded_string_size;
+	char *hex_encoded_padded_data_string = NULL;
 		
 	padded_data_size = pkcs7_pad(&padded_data, (unsigned char *) input, strlen(input), block_size);
 	padded_string_size = padded_data_size+1;
@@ -19,8 +21,15 @@ int main(){
 	memcpy(padded_string, padded_data, padded_data_size);
 	padded_string[padded_string_size-1] = '\0';
 	
-	printf("%s\n", padded_string);
+	printf("Raw bytes: \"%s\"\n", padded_string);
+	
+	hex_encode(&hex_encoded_padded_data_string, padded_data, padded_data_size);
+
+	printf("Hex encoded: \"%s\"\n", hex_encoded_padded_data_string);
 	
 	free(padded_data);
 	free(padded_string);
+	free(hex_encoded_padded_data_string);
+
+	return 0;
 }

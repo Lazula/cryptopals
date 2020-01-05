@@ -1,8 +1,7 @@
 CC=cc
-#-std=c89 -pedantic to be added later
-CFLAGS=-g -Wall -Wextra
+CFLAGS=-g -Wall -Wextra -std=c89 -pedantic
 INC_DIR=../../include/source
-LOCAL_INCLUDES=$(INC_DIR)/crypto_utility.c
+LOCAL_INCLUDES=$(INC_DIR)/crypto_utility.c $(INC_DIR)/hex_encoding.c
 
 build: main.c
 	$(CC) $(CFLAGS) $(LOCAL_INCLUDES) main.c -o main
