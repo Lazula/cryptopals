@@ -5,5 +5,6 @@
 
 size_t hex_encode(char **output_string, unsigned char *input_data, size_t input_size);
 size_t hex_decode(unsigned char **output_data, char *input_string);
+int hex_print(unsigned char *input, size_t input_size);
 
 #endif

@@ -63,3 +63,31 @@ size_t hex_encode(char **output_string, unsigned char *input_data, size_t input_
 	return output_size;
 }
 
+/* 
+ * prints the given data as a hex-encoded string
+ * does not cause additional memory allocations after returning
+ * slower than doing hex_encode manually, but
+ * much more convenient for debugging purposes
+ * 
+ * returns 0 on success
+ * return 1 on failure to encode
+ * return -1 on invalid parameters
+ */
+int hex_print(unsigned char *input, size_t size){
+	char *encoded = NULL;
+	
+	if(input == NULL || size == 0){
+		return -1;
+	}
+	
+	if(hex_encode(&encoded, input, size) == 0){
+		/* failure to encode */
+		return 1;
+	}
+	
+	printf("%s\n", encoded);
+
+	free(encoded);
+
+	return 0;
+}
