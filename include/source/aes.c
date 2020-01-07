@@ -757,3 +757,41 @@ signed char is_aes_ecb(unsigned char *data, size_t data_size, uint8_t key_type){
 
 	return 1;
 }
+
+/*
+ * Returns 0 on success
+ * Returns 1 on failure to read from /dev/urandom
+ * Returns -1 on invalid key type
+ */
+int generate_random_aes_key(unsigned char **output, uint8_t key_type){
+	FILE *urandom_file = fopen("/dev/urandom", "r");
+
+	size_t key_size;
+	switch(key_type){
+		case AES_KEY_128:
+			key_size = 16;
+			break;
+		case AES_KEY_192:
+			key_size = 24;
+			break;
+		case AES_KEY_256:
+			key_size = 32;
+			break;
+		default:
+			return -1;
+			break;
+	}
+	
+	if(output != NULL){
+		if(*output == NULL){
+			*output = malloc(key_size);
+		}
+	}
+	
+	if(fread(*output, sizeof(char), key_size, urandom_file) != key_size){
+		return 1;
+	}
+	
+	fclose(urandom_file);
+	return 0;
+}
