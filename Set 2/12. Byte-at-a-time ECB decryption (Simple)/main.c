@@ -1,4 +1,3 @@
-//TODO switch back to C89
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -170,4 +169,6 @@ int main(void){
 	free(decrypted_string);
 	free(key);
 	free(unknown_data);
+
+	return 0;
 }
