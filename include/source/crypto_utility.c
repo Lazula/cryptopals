@@ -49,7 +49,7 @@ size_t pkcs7_pad(unsigned char **output, unsigned char *input, size_t input_size
  * input_size: Size of data to unpad
  * block_size: Block size used (used for checking if last char can be padding)
  * 
- * Returns: size of *output (input_size - last_char OR input_size if not padded)
+ * Returns: size of *output (input_size - last_char OR input_size if not padded OR padding is invalid)
  * 
  * Notes
  * Remove PKCS#7 padding from input with given block size.
