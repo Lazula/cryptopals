@@ -40,11 +40,13 @@ int main(void){
 	unsigned char *encrypted_admin_profile = NULL;
 	unsigned char *encrypted_poisoned_profile;
 
-	unsigned char *key = (unsigned char *) "\x01\x02\x03\x04\x05\x06\x07\x08\x09\x10\x11\x12\x13\x14\x15\x16";
+	unsigned char *key;
 
 	struct dict *user_profile_dict = malloc(sizeof(struct dict));
 	struct dict *admin_profile_dict = malloc(sizeof(struct dict));
 	struct dict *poisoned_profile_dict = malloc(sizeof(struct dict));
+
+	generate_random_aes_key(&key, AES_KEY_128);
 
 	encrypted_profile_size = aes_encrypt(&encrypted_user_profile, (unsigned char *) user_profile, strlen(user_profile), key, NULL, AES_CIPHER_ECB, AES_KEY_128);
 	aes_encrypt(&encrypted_admin_profile, (unsigned char *) admin_profile, strlen(admin_profile) ,key, NULL, AES_CIPHER_ECB, AES_KEY_128);
@@ -56,6 +58,8 @@ int main(void){
 	memcpy(encrypted_poisoned_profile + (BLOCK_SIZE*2), encrypted_admin_profile + (BLOCK_SIZE*2), BLOCK_SIZE);
 
 	poisoned_profile_data_size = aes_decrypt(&poisoned_profile_data, encrypted_poisoned_profile, encrypted_profile_size, key, NULL, AES_CIPHER_ECB, AES_KEY_128);
+
+	free(key);
 
 	poisoned_profile = malloc(poisoned_profile_data_size+1);
 	memcpy(poisoned_profile, poisoned_profile_data, poisoned_profile_data_size);
