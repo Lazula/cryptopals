@@ -1,5 +1,2 @@
-Easy
--Add header includes to source files and remove function prototypes from *.c
-
-Moderate
--Make all code C89-compliant (add -std=c89 -pedantic to flags) - done for includes
+All the cleanup and improvements needed so far have been completed.
+Nothing other than completing more challenges right now.
