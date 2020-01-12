@@ -2,22 +2,22 @@
 
 This repository contains my solutions to the challenges at cryptopals.com, organized by set.
 
-Each challenge uses a **main.c** file, compiled with **compile.sh**, a simple bash line which adds the source files for the local includes and adds debugging information with gcc's **-g** option. A pre-compiled binary is included as well.
+Each challenge uses a `main.c` file, compiled with `make`, which automatically adds includes files and provides debugging information with gcc's `-g` option. A pre-compiled ELF binary is included as well. Use `make asan` to compile with ASan or `make ubsan` to compile with UBSan. Run `/bin/bash build_all.sh` to automatically run `make` for all challenges if the included binaries do not work (due to different operating system, etc.).
 
-The **include** directory is a collection of header and source files containing helper methods that are used in multiple places, such as encoder/decoder functions and ciphers.
+The **include** directory is a collection of header and source files containing helper functions that are used in multiple places, such as encoder/decoder functions and ciphers.
 
-Signed chars are used for ASCII text (null-terminated strings). Unsigned chars are used whenever binary safety is needed.
+Signed chars are used for printable ASCII text (null-terminated strings). Unsigned chars are used for binary blobs.
 
 Tools used:
 * tmux - Session management
 * vim - All text file editing
 * gcc - Compiling and inserting automatic 0xcc debug traps with asm("int3");
-* gdb - Debugging, memory examination
-* asan, valgrind - Memory usage debugging with valgrind flags --leak-check=yes and --track-origins=yes and gcc flag -fsanitize=address
+* gdb - Debugging, instruction stepping, memory examination
+* asan - gcc flag -fsanitize=address displays memory overread/overwrite and memory leaks
 
 ## warnings
-While I try to maintain a basic level of security in all my programs, these are a bit loose since they aren't really "programs" proper. What I'm trying to say is that you probably shouldn't put a suid bit on these.
+The code here should absolutely not be used for serious encryption - it's a series of challenges about the *weaknesses* of these methods, after all.
 
-These should not be used for serious encryption - it's a series of challenges about the *weaknesses* of these methods, after all.
+As far as application security, while I try to maintain a basic level of security in all my programs, these are a bit loose since they aren't really "programs" proper. What I'm trying to say is that you probably shouldn't put a suid bit on these.
 
-Nothing here has been tested on machines where CHAR\_BIT != 8. Some things have been made to refuse compilation because they are almost certain to fail, such as AES, but others may simply silently fail to do as intended. Basically, CHAR\_BIT != 8 isn't defined for this project.
+Machines where CHAR\_BIT != 8 have not been considered. Some things have been made to refuse compilation because they are almost certain to fail, but others may simply silently fail to do as intended. Basically, CHAR\_BIT != 8 is undefined for this project.
