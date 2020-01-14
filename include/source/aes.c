@@ -712,39 +712,26 @@ void dump_key(struct aes_key *key){
  * Checks for duplicate AES blocks. If any are found based on given key type, very likely to be ECB
  * Returns: 0 on success (if at least 2 blocks are the same)
  * 1 on failure (no match)
- * -1 on invalid key type
+ * -1 on size not multiple of 16
  */
-signed char is_aes_ecb(unsigned char *data, size_t data_size, uint8_t key_type){
+signed char is_aes_ecb(unsigned char *data, size_t data_size){
 	/* Break data into blocks of block_size and check for duplicates */
-	size_t block_size, blocks;
+	size_t const BLOCK_SIZE = 16;
+	size_t blocks;
 	unsigned char *current_i_block, *current_j_block;
 	size_t i, j;
 
-	switch(key_type){
-		case AES_KEY_128:
-			block_size = 16;
-			break;
-		case AES_KEY_192:
-			block_size = 24;
-			break;
-		case AES_KEY_256:
-			block_size = 32;
-			break;
-		default:
-			/* Invalid key type */
-			return -1;
-			break;
-	}
-	
-	current_i_block = malloc(block_size);
-	current_j_block = malloc(block_size);
-	blocks = data_size / block_size;
+	if(data_size % BLOCK_SIZE != 0) return -1;
+
+	current_i_block = malloc(BLOCK_SIZE);
+	current_j_block = malloc(BLOCK_SIZE);
+	blocks = data_size / BLOCK_SIZE;
 
 	for(i = 0; i < blocks; i++){
-		memcpy(current_i_block, data+(i*block_size), block_size);
+		memcpy(current_i_block, data+(i*BLOCK_SIZE), BLOCK_SIZE);
 		for(j = i + 1; j < blocks; j++){
-			memcpy(current_j_block, data+(j*block_size), block_size);
-			if(!memcmp(current_i_block, current_j_block, block_size)){
+			memcpy(current_j_block, data+(j*BLOCK_SIZE), BLOCK_SIZE);
+			if(!memcmp(current_i_block, current_j_block, BLOCK_SIZE)){
 				free(current_i_block);
 				free(current_j_block);
 				return 0;
