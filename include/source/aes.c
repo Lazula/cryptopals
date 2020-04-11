@@ -765,6 +765,7 @@ int generate_random_aes_key(unsigned char **output, uint8_t key_type){
 			key_size = 32;
 			break;
 		default:
+			fclose(urandom_file);
 			return -1;
 			break;
 	}
@@ -776,6 +777,7 @@ int generate_random_aes_key(unsigned char **output, uint8_t key_type){
 	}
 	
 	if(fread(*output, sizeof(char), key_size, urandom_file) != key_size){
+		fclose(urandom_file);
 		return 1;
 	}
 	
