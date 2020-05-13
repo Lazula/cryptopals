@@ -82,13 +82,7 @@ size_t base64_encode(char **output_string, unsigned char *input_data, size_t inp
 	return base64_encoded_string_size;
 }
 
-/*
- * this does not suppport unpadded base64
- * Pass an uninitialized pointer or you will leak memory.
- * Returns output data size (does not include null byte)
- */
-/*
- * Parameters:
+/* Parameters:
  * **output_data: Automatically allocates *output_data for the correct size if == NULL
  * *input_string: Data to be encoded. Not binary safe - should be a padded base64 string.
  * 
@@ -105,7 +99,7 @@ size_t base64_decode(unsigned char **output_data, char *input_string){
 	unsigned char *current_output_bytes = malloc(3);
 	
 	size_t num_padding;
-	size_t input_size;
+	size_t input_size, input_size_with_padding;
 	size_t output_data_size;
 	size_t index, output_index, j;
 	
@@ -113,8 +107,20 @@ size_t base64_decode(unsigned char **output_data, char *input_string){
 	/* If there is no padding, set first_pad to the index of the terminating null byte */
 	if(first_pad == NULL) first_pad = strchr(input_string, '\0');
 	num_padding = strlen(first_pad);
-	input_size = strlen(input_string) - num_padding;
-	output_data_size = ((input_size + num_padding) * 3) / 4;
+	input_size_with_padding = strlen(input_string);
+	input_size = input_size_with_padding - num_padding;
+
+	/* Add all but the last four-character block */
+	output_data_size = ((input_size_with_padding-4) * 3) / 4;
+	/* Add appropriate length based on number of padding characters */
+	if(num_padding == 2){
+		output_data_size += 1;
+	}else if(num_padding == 1){
+		output_data_size += 2;
+	}else{
+		output_data_size += 3;
+	}
+
 	output_index = 0;
 	
 	output_buffer = malloc(output_data_size);
@@ -154,7 +160,12 @@ size_t base64_decode(unsigned char **output_data, char *input_string){
 		current_output_bytes[2] = ((current_input_sextets[2] << 6) & 0xC0) + current_input_sextets[3];
 		
 		/* Output bytes are NOT string-safe. */
-		memcpy(output_buffer+output_index, current_output_bytes, 3);
+		if(output_data_size - output_index >= 3){
+			memcpy(output_buffer+output_index, current_output_bytes, 3);
+		}else{
+			/* Avoid writing out-of-bounds */
+			memcpy(output_buffer+output_index, current_output_bytes, output_data_size - output_index);
+		}
 		output_index += 3;
 	}
 	
