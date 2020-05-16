@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <limits.h>
 
 #include "../../include/base64.h"
 #include "../../include/hex_encoding.h"
@@ -19,6 +18,13 @@
  *     needle_map
  */
 #define DEBUG 0
+
+/* DEBUG_ENCRYPT_FUNC
+ * 0: off
+ * 1: print combined and encrypted data
+ *    for each encrypt call
+ */
+#define DEBUG_ENCRYPT_FUNC 0
 
 /* DEBUG_DECRYPTION_TABLE
  * 0: off
@@ -49,26 +55,19 @@ struct encryption_map {
 	unsigned char last_plaintext_byte;
 };
 
-
-int compare_encryption_maps(const void *p1, const void *p2){
-	struct encryption_map *e1 = *((struct encryption_map **) p1);
-	struct encryption_map *e2 = *((struct encryption_map **) p2);
-	return memcmp(e1 -> ciphertext, e2 -> ciphertext, BLOCK_SIZE);
-}
-
 unsigned char *get_block(unsigned char *input, size_t block, size_t block_size);
 int populate_decryption_table(struct encryption_map **decryption_table, unsigned char *input_data, size_t input_data_size, unsigned char *decrypted_data, size_t decrypted_data_size, size_t current_block, size_t block_size);
 size_t encrypt(unsigned char **output, size_t *output_size, unsigned char *input_data, size_t input_data_size);
 
 int main(void){
-	size_t i;
+	size_t i, j;
 
 	struct encryption_map *decryption_table[256];
-	struct encryption_map **correct_map_ptr;
 	struct encryption_map *correct_map;
 
 	struct encryption_map *needle_map;
 	unsigned char *needle_map_ciphertext_unculled = NULL;
+	size_t needle_map_ciphertext_unculled_size;
 	unsigned char *needle_map_ciphertext = NULL;
 
 	unsigned char *decrypted_data = NULL;
@@ -202,7 +201,6 @@ int main(void){
 			#endif
 		}
 
-		size_t needle_map_ciphertext_unculled_size;
 		/* only include set bytes (controlled input) for encryption
 		 * decrypted bytes are only used for finding all possible last bytes
 		 * adding them here would make them appear twice
@@ -226,11 +224,16 @@ int main(void){
 		/* Get all possible ciphertexts and find last plaintext byte using the needle */
 		/* Use num_set_bytes so that decrypted data is not copied multiple times */
 		populate_decryption_table(decryption_table, input_data, num_set_bytes, decrypted_data, decrypted_data_size, current_block, BLOCK_SIZE);
-		qsort(decryption_table, 256, sizeof(struct encryption_map *), compare_encryption_maps);
-		correct_map_ptr = bsearch(&needle_map, decryption_table, 256, sizeof(struct encryption_map *), compare_encryption_maps);
 
-		if(correct_map_ptr == NULL){
-			/* bsearch returns NULL on failure to find */
+		correct_map = NULL;
+		for(j = 0; j < 256; j++){
+			if(memcmp(needle_map -> ciphertext, decryption_table[j] -> ciphertext, BLOCK_SIZE) == 0){
+				correct_map = decryption_table[j];
+				break;
+			}
+		}
+
+		if(correct_map == NULL){
 			fprintf(stderr, "Could not find correct encryption map.\n");
 			decrypted_string = malloc(decrypted_data_size+1);
 			memcpy(decrypted_string, decrypted_data, decrypted_data_size);
@@ -240,7 +243,6 @@ int main(void){
 			exit(EXIT_FAILURE);
 		}
 
-		correct_map = * (struct encryption_map **) correct_map_ptr;
 		#if DEBUG >= 2
 		printf("Found correct encryption map. Decrypted character '%c'.\n", correct_map -> last_plaintext_byte);
 		#endif
