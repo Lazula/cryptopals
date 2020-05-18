@@ -12,27 +12,18 @@ int main(void){
 	char *linebreak = NULL;
 	unsigned char *raw_encrypted_data = NULL;
 	size_t raw_data_size;
-	signed char found_ecb_128, found_ecb_192, found_ecb_256;
-	
+	size_t current_line;
+
+	current_line = 0;
 	while(fgets(line_buffer, line_buffer_size, data_file) != NULL){
+		current_line++;
 		linebreak = strchr(line_buffer, '\n');
 		if(linebreak != NULL) *linebreak = '\0';
 		raw_encrypted_data = NULL;
 		raw_data_size = hex_decode(&raw_encrypted_data, line_buffer);
 
-		found_ecb_128 = is_aes_ecb(raw_encrypted_data, raw_data_size, AES_KEY_128);
-		if(found_ecb_128 == 0){
-			printf("Found potential AES-128-ECB: %s\n", line_buffer);
-		}
-		
-		found_ecb_192 = is_aes_ecb(raw_encrypted_data, raw_data_size, AES_KEY_192);
-		if(found_ecb_192 == 0){
-			printf("Found potential AES-192-ECB: %s\n", line_buffer);
-		}
-		
-		found_ecb_256 = is_aes_ecb(raw_encrypted_data, raw_data_size, AES_KEY_256);
-		if(found_ecb_256 == 0){
-			printf("Found potential AES-256-ECB: %s\n", line_buffer);
+		if(is_aes_ecb(raw_encrypted_data, raw_data_size) == 0){
+			printf("Detected AES-ECB on line %lu with hex data: %s\n", current_line, line_buffer);
 		}
 		
 		free(raw_encrypted_data);

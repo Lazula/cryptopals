@@ -101,7 +101,7 @@ int main(void){
 	repeating_key_xor((unsigned char *) decrypted_string, raw_encrypted_data, raw_data_size, key, found_keysize);
 	decrypted_string[decrypted_string_size-1]= '\0';
 	
-	printf("%s", decrypted_string);
+	printf("%s\n", decrypted_string);
 	
 	free(decrypted_string);
 	free(current_byteset);

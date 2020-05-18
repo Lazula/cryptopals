@@ -6,7 +6,6 @@
 #include "../../include/base64.h"
 #include "../../include/aes.h"
 
-int generate_random_aes_key(unsigned char **output, uint8_t key_type);
 size_t random_encryptor(unsigned char **output, unsigned char *input, size_t input_size, uint8_t key_type);
 
 /* 
@@ -39,14 +38,12 @@ int main(void){
 	
 	encrypted_data_size = random_encryptor(&encrypted_data, (unsigned char *) input_string, input_string_size, AES_KEY_128);
 	
-	is_ecb = is_aes_ecb(encrypted_data, encrypted_data_size, AES_KEY_128);
+	is_ecb = is_aes_ecb(encrypted_data, encrypted_data_size);
 	
-	/*asm("int3");*/
-
 	if(is_ecb == 0){
 		printf("Should be ECB.\n");
 	}else if(is_ecb == 1){
-		printf("Should be CBC.\n");
+		printf("Should be CBC. (is_aes_ecb generic failure to detect ECB)\n");
 	}else{
 		printf("Error in is_aes_ecb.\n");
 	}
@@ -74,7 +71,8 @@ int main(void){
  * Returns -1 on failure to read from /dev/urandom
  */
 size_t random_encryptor(unsigned char **output, unsigned char *input, size_t input_size, uint8_t key_type){
-	FILE *urandom_file;
+	size_t i;
+
 	unsigned char *key = NULL;
 	unsigned char *initialization_vector = NULL;
 	unsigned char *new_input = NULL;
@@ -96,13 +94,15 @@ size_t random_encryptor(unsigned char **output, unsigned char *input, size_t inp
 	postfix_length = (rand() % 6) + 5;
 
 	prefix = malloc(prefix_length);
-	postfix = malloc(postfix_length);
+	for(i = 0; i < prefix_length; i++){
+		prefix[i] = (unsigned char) (rand() % 256);
+	}
 
-	urandom_file = fopen("/dev/urandom", "r");
-	
-	fread(prefix, sizeof(char), prefix_length, urandom_file);
-	fread(postfix, sizeof(char), postfix_length, urandom_file);
-	
+	postfix = malloc(postfix_length);
+	for(i = 0; i < postfix_length; i++){
+		postfix[i] = (unsigned char) (rand() % 256);
+	}
+
 	/* build the new buffer */
 	new_input_size = input_size+prefix_length+postfix_length;
 	new_input = malloc(new_input_size);
@@ -112,7 +112,7 @@ size_t random_encryptor(unsigned char **output, unsigned char *input, size_t inp
 	
 	free(prefix);
 	free(postfix);
-	fclose(urandom_file);
+
 	/* 50/50 ECB/CBC 
 	 * 0 or 1
 	 */
@@ -137,44 +137,4 @@ size_t random_encryptor(unsigned char **output, unsigned char *input, size_t inp
 	free(new_input);
 
 	return output_size;
-}
-
-
-
-/*
- * Returns 0 on success
- * Returns 1 on failure to read from /dev/urandom
- * Returns -1 on invalid key type
- */
-int generate_random_aes_key(unsigned char **output, uint8_t key_type){
-	FILE *urandom_file = fopen("/dev/urandom", "r");
-
-	size_t key_size;
-	switch(key_type){
-		case AES_KEY_128:
-			key_size = 16;
-			break;
-		case AES_KEY_192:
-			key_size = 24;
-			break;
-		case AES_KEY_256:
-			key_size = 32;
-			break;
-		default:
-			return -1;
-			break;
-	}
-	
-	if(output != NULL){
-		if(*output == NULL){
-			*output = malloc(key_size);
-		}
-	}
-	
-	if(fread(*output, sizeof(char), key_size, urandom_file) != key_size){
-		return 1;
-	}
-	
-	fclose(urandom_file);
-	return 0;
 }
