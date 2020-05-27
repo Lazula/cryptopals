@@ -19,3 +19,6 @@ The code here should absolutely not be used for serious encryption - it's a seri
 As far as application security, while I try to maintain a basic level of security in all my programs, these are a bit loose since they aren't really "programs" proper. What I'm trying to say is that you probably shouldn't put a suid bit on these.
 
 Machines where CHAR\_BIT != 8 have not been considered. Some things have been made to refuse compilation because they are almost certain to fail, but others may simply silently fail to do as intended. Basically, CHAR\_BIT != 8 is undefined for this project.
+
+## license
+All code in this project for which I have the authority to do so is released into the public domain via the Unlicense (see LICENSE). I don't own glibc or any of the tools used.
