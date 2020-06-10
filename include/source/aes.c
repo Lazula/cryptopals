@@ -92,19 +92,17 @@ static const uint32_t round_constants[10] = {
 
 /*
  * Parameters:
- * **output: Automatically allocates *output for the correct size if == NULL
+ * **output_ptr: Automatically allocates *output_ptr for the correct size if == NULL
+ * *output_size_ptr: Sets *output_size_ptr to appropriate size if != NULL (even if *output_ptr == NULL)
  * *input: Data to be encrypted. Binary safe.
  * *key: The main AES key. 16, 24, or 32 bytes based on key_type.
- * *initialization_vector: Used for CBC mode. Unused in ECB mode - can be 0.
+ * *initialization_vector: Used for CBC mode. If cipher_type != AES_CIPHER_CBC, unused and can be NULL.
  * cipher_type: Uses constants defined in aes.h such as AES_CIPHER_ECB to select cipher mode.
  * key_type: Uses constants defined in aes.h such as AES_KEY_128 to select key size. Currently supports 128, 192, and 256.
  * 
- * Returns: The size of the PKCS#7 padded and encrypted data block. Multiple of 16.
- * 
- * Notes:
- * - There may be a better way to handle the initialization vector since it isn't always used.
+ * Returns 0
  */
-size_t aes_encrypt(unsigned char **output, unsigned char *input, size_t input_size, unsigned char *key, unsigned char *initialization_vector, uint8_t cipher_type, uint8_t key_type){
+int aes_encrypt(unsigned char **output_ptr, size_t *output_size_ptr, unsigned char *input, size_t input_size, unsigned char *key, unsigned char *initialization_vector, uint8_t cipher_type, uint8_t key_type){
 	uint8_t *padded_input = NULL;
 	size_t padded_input_size;
 	uint8_t *ciphertext;
@@ -112,36 +110,37 @@ size_t aes_encrypt(unsigned char **output, unsigned char *input, size_t input_si
 	struct aes_state *state;
 	struct aes_state *prev_state;
 	struct aes_key *key_schedule[15];
-	
+
 	uint8_t i, j;
 	size_t state_index;
-	
+
 	uint8_t *input_ptr;
-	uint8_t *output_ptr;
-	
-	
-	padded_input_size = pkcs7_pad(&padded_input, input, input_size, 16);
+
+
+	pkcs7_pad(&padded_input, &padded_input_size, input, input_size, 16);
 	ciphertext = malloc(padded_input_size);
-	
-	if(output != NULL){
-		if(*output == NULL){
-			*output = malloc(padded_input_size);
+
+	if(output_ptr != NULL){
+		if(*output_ptr == NULL){
+			*output_ptr = malloc(padded_input_size);
 		}
 	}
 
 	output_size = padded_input_size;
-	
+
+	if(output_size_ptr != NULL) *output_size_ptr = output_size;
+
 	state = malloc(sizeof(struct aes_state));
 	state -> key_type = key_type;
 	state -> cipher_type = cipher_type;
-	
+
 	prev_state = NULL;
 	if(cipher_type == AES_CIPHER_CBC) prev_state = malloc(sizeof(struct aes_state));
-	
+
 	for(i = 0; i < 15; i++) key_schedule[i] = malloc(sizeof(struct aes_key));
-		
-	expand_key(key_schedule, state -> key_type, key);
 	
+	expand_key(key_schedule, state -> key_type, key);
+
 	for(state_index = 0; state_index < padded_input_size; state_index += 16){
 		input_ptr = (uint8_t *)(padded_input+state_index);
 		for(i = 0; i < 4; i++){
@@ -158,7 +157,7 @@ size_t aes_encrypt(unsigned char **output, unsigned char *input, size_t input_si
 				state -> bytes[i][j] = *(input_ptr+(j*4)+i);
 			}
 		}
-		
+
 		if(cipher_type == AES_CIPHER_CBC){
 			if(state_index == 0){
 				/* Apply IV */
@@ -176,25 +175,24 @@ size_t aes_encrypt(unsigned char **output, unsigned char *input, size_t input_si
 				}
 			}
 		}
-		
+
 		cipher(state, key_schedule);
 		if(cipher_type == AES_CIPHER_CBC) memcpy(prev_state, state, sizeof(struct aes_state));
 		
-		output_ptr = (uint8_t *)((*output)+state_index);
 		for(i = 0; i < 4; i++){
 			for(j = 0; j < 4; j++){
-				*(output_ptr+(j*4)+i) = state -> bytes[i][j];
+				*((*output_ptr)+state_index+(j*4)+i) = state -> bytes[i][j];
 			}
 		}
 	}
-	
+
 	if(cipher_type == AES_CIPHER_CBC) free(prev_state);	
 	for(i = 0; i < 15; i++) free(key_schedule[i]);
 	free(state);
 	free(ciphertext);
 	free(padded_input);
-	
-	return output_size;
+
+	return 0;
 }
 
 /* 
@@ -246,19 +244,19 @@ void cipher(struct aes_state *state, struct aes_key *key_schedule[15]){
 
 /*
  * Parameters:
- * **output: Automatically allocates *output for the correct size if == NULL (intended for binary data - will not add space for trailing \0)
+ * **output_ptr: Automatically allocates *output_ptr for the correct size if == NULL
+ * *output_size_ptr: Sets *output_size_ptr to output size if != NULL
  * *input: Data to be decrypted. Binary safe.
  * *key: The main AES key. 16, 24, or 32 bytes based on key_type.
  * *initialization_vector: Used for CBC mode. Unused in ECB mode - can be 0.
  * cipher_type: Uses constants defined in aes.h such as AES_CIPHER_ECB to select cipher mode.
  * key_type: Uses constants defined in aes.h such as AES_KEY_128 to select key size. Currently supports 128, 192, and 256.
  * 
- * Returns: The size of the PKCS#7 unpadded and decrypted data block.
- * 
- * Notes:
- * - There may be a better way to handle the initialization vector since it isn't always used.
+ * Returns:
+ * 0 on success
+ * 1 on bad padding (*output_ptr will not be allocated and *output_size_ptr will not be set)
  */
-size_t aes_decrypt(unsigned char **output, unsigned char *input, size_t input_size, unsigned char *key, unsigned char *initialization_vector, uint8_t cipher_type, uint8_t key_type){
+int aes_decrypt(unsigned char **output_ptr, size_t *output_size_ptr, unsigned char *input, size_t input_size, unsigned char *key, unsigned char *initialization_vector, uint8_t cipher_type, uint8_t key_type){
 	uint8_t *cleartext = malloc(input_size);
 	struct aes_state *state;
 	struct aes_state *prev_state = NULL;
@@ -271,7 +269,7 @@ size_t aes_decrypt(unsigned char **output, unsigned char *input, size_t input_si
 	uint8_t *input_ptr;
 	uint8_t *cleartext_ptr;
 	
-	size_t unpadded_output_size;
+	int return_val;
 	
 	state = malloc(sizeof(struct aes_state));
 	state -> key_type = key_type;
@@ -331,8 +329,9 @@ size_t aes_decrypt(unsigned char **output, unsigned char *input, size_t input_si
 			}
 		}
 	}
-	
-	unpadded_output_size = pkcs7_unpad(output, cleartext, input_size, 16);
+
+	/* If return_val == 1 (bad padding), *output_ptr and *output_size_ptr are unchanged */
+	return_val = pkcs7_unpad(output_ptr, output_size_ptr, cleartext, input_size, 16);
 	
 	if(cipher_type == AES_CIPHER_CBC){
 		free(prev_state);
@@ -342,7 +341,7 @@ size_t aes_decrypt(unsigned char **output, unsigned char *input, size_t input_si
 	free(state);
 	free(cleartext);
 	
-	return unpadded_output_size;
+	return return_val;
 }
 
 /* 

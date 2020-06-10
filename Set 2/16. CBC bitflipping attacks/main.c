@@ -92,7 +92,7 @@ int encrypt(unsigned char **output_ptr, size_t *output_size_ptr, unsigned char *
 		}
 	}
 
-	encrypted_combined_data_size = aes_encrypt(&encrypted_combined_data, combined_data, combined_data_size, KEY, IV, AES_CIPHER_CBC, AES_KEY_128);
+	aes_encrypt(&encrypted_combined_data, &encrypted_combined_data_size, combined_data, combined_data_size, KEY, IV, AES_CIPHER_CBC, AES_KEY_128);
 
 	if(output_ptr != NULL){
 		if(*output_ptr == NULL) *output_ptr = malloc(encrypted_combined_data_size);
@@ -119,7 +119,7 @@ int authenticate(unsigned char *input_data, size_t input_data_size){
 	char *decrypted_string;
 	#endif
 
-	decrypted_data_size = aes_decrypt(&decrypted_data, input_data, input_data_size, KEY, IV, AES_CIPHER_CBC, AES_KEY_128);
+	aes_decrypt(&decrypted_data, &decrypted_data_size, input_data, input_data_size, KEY, IV, AES_CIPHER_CBC, AES_KEY_128);
 	
 	#if DEBUG_AUTHENTICATION
 	decrypted_string = malloc(decrypted_data_size+1);

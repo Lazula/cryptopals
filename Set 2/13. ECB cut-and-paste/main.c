@@ -40,7 +40,7 @@ int main(void){
 	unsigned char *encrypted_admin_profile = NULL;
 	unsigned char *encrypted_poisoned_profile;
 
-	unsigned char *key;
+	unsigned char *key = NULL;
 
 	struct dict *user_profile_dict = malloc(sizeof(struct dict));
 	struct dict *admin_profile_dict = malloc(sizeof(struct dict));
@@ -48,8 +48,8 @@ int main(void){
 
 	generate_random_aes_key(&key, AES_KEY_128);
 
-	encrypted_profile_size = aes_encrypt(&encrypted_user_profile, (unsigned char *) user_profile, strlen(user_profile), key, NULL, AES_CIPHER_ECB, AES_KEY_128);
-	aes_encrypt(&encrypted_admin_profile, (unsigned char *) admin_profile, strlen(admin_profile) ,key, NULL, AES_CIPHER_ECB, AES_KEY_128);
+	aes_encrypt(&encrypted_user_profile, &encrypted_profile_size, (unsigned char *) user_profile, strlen(user_profile), key, NULL, AES_CIPHER_ECB, AES_KEY_128);
+	aes_encrypt(&encrypted_admin_profile, NULL, (unsigned char *) admin_profile, strlen(admin_profile) ,key, NULL, AES_CIPHER_ECB, AES_KEY_128);
 	
 	encrypted_poisoned_profile = malloc(encrypted_profile_size);
 	/* copy user data to a new poisoned ciphertext */
@@ -57,7 +57,7 @@ int main(void){
 	/* poison the ciphertext by replacing "role=user[padding]" with "role=admin[padding]" */
 	memcpy(encrypted_poisoned_profile + (BLOCK_SIZE*2), encrypted_admin_profile + (BLOCK_SIZE*2), BLOCK_SIZE);
 
-	poisoned_profile_data_size = aes_decrypt(&poisoned_profile_data, encrypted_poisoned_profile, encrypted_profile_size, key, NULL, AES_CIPHER_ECB, AES_KEY_128);
+	aes_decrypt(&poisoned_profile_data, &poisoned_profile_data_size, encrypted_poisoned_profile, encrypted_profile_size, key, NULL, AES_CIPHER_ECB, AES_KEY_128);
 
 	free(key);
 

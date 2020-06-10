@@ -68,7 +68,7 @@ int main(void){
 	initialization_vector = (unsigned char *) "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
 	decrypted_data = NULL;
 	
-	decrypted_data_size = aes_decrypt(&decrypted_data, raw_encrypted_data, raw_data_size, key, initialization_vector, AES_CIPHER_CBC, AES_KEY_128);
+	aes_decrypt(&decrypted_data, &decrypted_data_size, raw_encrypted_data, raw_data_size, key, initialization_vector, AES_CIPHER_CBC, AES_KEY_128);
 
 	/* Copy raw data bytes into a buffer with space for a null byte */
 	decrypted_string = malloc(decrypted_data_size+1);

@@ -72,7 +72,7 @@ int main(void){
 	
 	decrypted_data = NULL;
 	
-	decrypted_data_size = aes_decrypt(&decrypted_data, raw_encrypted_data, raw_data_size, key, NULL, AES_CIPHER_ECB, AES_KEY_128);
+	aes_decrypt(&decrypted_data, &decrypted_data_size, raw_encrypted_data, raw_data_size, key, NULL, AES_CIPHER_ECB, AES_KEY_128);
 	
 	decrypted_string_size = decrypted_data_size+1;
 	decrypted_string = malloc(decrypted_string_size);

@@ -6,7 +6,7 @@
 #include "../../include/base64.h"
 #include "../../include/aes.h"
 
-size_t random_encryptor(unsigned char **output, unsigned char *input, size_t input_size, uint8_t key_type);
+int random_encryptor(unsigned char **output_ptr, size_t *output_size_ptr, unsigned char *input, size_t input_size, uint8_t key_type);
 
 /* 
  * This challenge is written in a very confusing way if you're not already aware of the concept
@@ -15,8 +15,8 @@ size_t random_encryptor(unsigned char **output, unsigned char *input, size_t inp
  * We can use our own input and analyze the result
  */
 
-#define CHEAT
-#ifdef CHEAT
+#define CHEAT 0
+#if CHEAT
 static unsigned char cheat_answer;
 #endif
 
@@ -36,7 +36,7 @@ int main(void){
 	memset(input_string, 'A', input_string_size-1);
 	input_string[input_string_size-1] = '\0';
 	
-	encrypted_data_size = random_encryptor(&encrypted_data, (unsigned char *) input_string, input_string_size, AES_KEY_128);
+	random_encryptor(&encrypted_data, &encrypted_data_size, (unsigned char *) input_string, input_string_size, AES_KEY_128);
 	
 	is_ecb = is_aes_ecb(encrypted_data, encrypted_data_size);
 	
@@ -48,7 +48,7 @@ int main(void){
 		printf("Error in is_aes_ecb.\n");
 	}
 
-	#ifdef CHEAT
+	#if CHEAT
 		printf("Actual method used: ");
 		if(cheat_answer == 0){
 			printf("ECB\n");
@@ -63,14 +63,10 @@ int main(void){
 	return 0;
 }
 
-/* 
- * Adds 5-10 bytes before and after given input, then encrypts new buffer
+/* Adds 5-10 bytes before and after given input, then encrypts new buffer
  * with either ECB or CBC, chosen randomly
- *
- * Returns 0 on success
- * Returns -1 on failure to read from /dev/urandom
  */
-size_t random_encryptor(unsigned char **output, unsigned char *input, size_t input_size, uint8_t key_type){
+int random_encryptor(unsigned char **output_ptr, size_t *output_size_ptr, unsigned char *input, size_t input_size, uint8_t key_type){
 	size_t i;
 
 	unsigned char *key = NULL;
@@ -83,8 +79,6 @@ size_t random_encryptor(unsigned char **output, unsigned char *input, size_t inp
 	
 	unsigned char cipher_choice;
 	unsigned char prefix_length, postfix_length;
-
-	size_t output_size;
 	
 	srand(time(NULL));
 	
@@ -117,24 +111,24 @@ size_t random_encryptor(unsigned char **output, unsigned char *input, size_t inp
 	 * 0 or 1
 	 */
 	cipher_choice = rand() % 2;
-	#ifdef CHEAT
-		cheat_answer = cipher_choice;
+	#if CHEAT
+	cheat_answer = cipher_choice;
 	#endif
 
 	/* random key */
 	generate_random_aes_key(&key, key_type);
 	
 	if(cipher_choice == 0){
-		output_size = aes_encrypt(output, new_input, new_input_size, key, NULL, AES_CIPHER_ECB, key_type);
+		aes_encrypt(output_ptr, output_size_ptr, new_input, new_input_size, key, NULL, AES_CIPHER_ECB, key_type);
 	}else{/*(cipher_choice == 1)*/
 		/* random IV - IV is always 16 bytes, the size of an AES round key/AES-128 key  */
 		generate_random_aes_key(&initialization_vector, AES_KEY_128);
-		output_size = aes_encrypt(output, new_input, new_input_size, key, initialization_vector, AES_CIPHER_CBC, key_type);
+		aes_encrypt(output_ptr, output_size_ptr, new_input, new_input_size, key, initialization_vector, AES_CIPHER_CBC, key_type);
 		free(initialization_vector);
 	}
 
 	free(key);
 	free(new_input);
 
-	return output_size;
+	return 0;
 }

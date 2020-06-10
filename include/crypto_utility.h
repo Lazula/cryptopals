@@ -2,6 +2,7 @@
 #define CRYPTO_UTILITY_H
 
 #include <stdlib.h>
+#include <string.h>
 #include <limits.h>
 
 /* No, the C99 (this program is C89 regardless) uint8_t type is not guaranteed to exist in stdint.h
@@ -24,7 +25,7 @@ typedef unsigned long uint32_t;
 #error No 32-bit type available. Cannot typedef uint32_t.
 #endif
 
-size_t pkcs7_pad(unsigned char **output, unsigned char *input, size_t input_size, size_t block_size);
-size_t pkcs7_unpad(unsigned char **output, unsigned char *input, size_t input_size, size_t block_size);
+int pkcs7_pad(unsigned char **output_ptr, size_t *output_size_ptr, unsigned char *input, size_t input_size, size_t block_size);
+int pkcs7_unpad(unsigned char **output_ptr, size_t *output_size_ptr, unsigned char *input, size_t input_size, size_t block_size);
 
 #endif

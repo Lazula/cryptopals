@@ -450,7 +450,7 @@ size_t encrypt(unsigned char **output_ptr, size_t *output_size_ptr, unsigned cha
 	if(input_data_size > 0) memcpy(combined_data+prefix_data_size, input_data, input_data_size);
 	memcpy(combined_data+prefix_data_size+input_data_size, secret_data, secret_data_size);
 
-	encrypted_combined_data_size = aes_encrypt(&encrypted_combined_data, combined_data, combined_data_size, KEY, NULL, AES_CIPHER_ECB, AES_KEY_128);
+	aes_encrypt(&encrypted_combined_data, &encrypted_combined_data_size, combined_data, combined_data_size, KEY, NULL, AES_CIPHER_ECB, AES_KEY_128);
 
 	#if DEBUG_ENCRYPT_FUNC
 	printf("Combined data: ");
