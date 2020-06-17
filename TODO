@@ -1,2 +1,0 @@
-- remove stdint.h (it requires gnu89 or c99)
-- add more detailed error condition for bad padding
