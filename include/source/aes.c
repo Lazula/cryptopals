@@ -201,8 +201,10 @@ int aes_encrypt(unsigned char **output_ptr, size_t *output_size_ptr, unsigned ch
 			state_to_arr(nonce_buffer, state);
 
 			/* XOR the ciphered state with the plaintext before copying into output */
-			for(i = 0; input_index + i < input_buffer_size; i++)
+			for(i = 0; i < 16; i++){
+				if(i + input_index == input_buffer_size) break;
 				(*output_ptr)[input_index + i] = nonce_buffer[i] ^ input_buffer[input_index + i];
+			}
 		}else{
 			/* Take the next block of input data into the state matrix */
 			arr_to_state(state, input_buffer+input_index);
@@ -230,6 +232,7 @@ int aes_encrypt(unsigned char **output_ptr, size_t *output_size_ptr, unsigned ch
 		}
 	}
 
+	if(cipher_type == AES_CIPHER_CTR) free(nonce_buffer);
 	if(cipher_type == AES_CIPHER_CBC) free(prev_state);
 	for(i = 0; i < 15; i++) free(key_schedule[i]);
 	free(state);
@@ -879,7 +882,7 @@ int generate_random_aes_key(unsigned char **output, uint8_t key_type){
 	
 	srand(time(NULL));
 	for(i = 0; i < key_size; i++){
-		*output[i] = (unsigned char) (rand() % 256);
+		(*output)[i] = (unsigned char) (rand() % 256);
 	}
 
 	return 0;
