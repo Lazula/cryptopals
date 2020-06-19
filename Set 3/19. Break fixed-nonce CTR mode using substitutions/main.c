@@ -51,7 +51,7 @@ int main(){
 	free_key_and_nonce();
 
 	for(i = 0; i < 40; i++){
-		guessed_plaintexts[i] = malloc(encrypted_secret_sizes[i]);
+		guessed_plaintexts[i] = malloc(encrypted_secret_sizes[i]+1);
 		if(encrypted_secret_sizes[i] > keystream_size)
 			keystream_size = encrypted_secret_sizes[i];
 	}
@@ -97,6 +97,7 @@ int main(){
 
 	for(i = 0; i < 40; i++){
 		fixed_xor((unsigned char *) guessed_plaintexts[i], encrypted_secrets[i], keystream, encrypted_secret_sizes[i]);
+		guessed_plaintexts[i][encrypted_secret_sizes[i]] = '\0';
 		printf("%s\n", guessed_plaintexts[i]);
 	}
 
