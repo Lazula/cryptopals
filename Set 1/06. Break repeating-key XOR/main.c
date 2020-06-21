@@ -9,6 +9,8 @@
 #include "../../include/hamming_distance.h"
 #include "../../include/decrypt_single_byte_xor.h"
 
+#define DEBUG 0
+
 int main(void){
 	FILE *data_file;
 	/* input_buffer accepts up to 1MB-1 with lines up to the same length */
@@ -46,7 +48,7 @@ int main(void){
 	fclose(data_file);
 	
 	/* input_buffer is now a single block of b64-encoded data */
-	raw_data_size = base64_decode(&raw_encrypted_data, input_buffer);
+	base64_decode(&raw_encrypted_data, &raw_data_size, input_buffer);
 	
 	free(input_buffer);
 	
@@ -69,13 +71,18 @@ int main(void){
 		if(average_edit_distance < best_edit_distance){
 			best_edit_distance = average_edit_distance;
 			found_keysize = keysize;
-			/* printf("new best keysize %ld|edit distance %lf|total %d|trials %d\n", keysize, average_edit_distance, total_edit_distance, trials); */
+			#if DEBUG
+				printf("new best keysize %ld|edit distance %f|total %d|num_trials %lu\n", keysize, average_edit_distance, total_edit_distance, num_trials);
+			#endif
 		}
 		
 		free(byteset_one);
 		free(byteset_two);
 	}
-	/* printf("Most likely key length: %lu, with normalized edit distance of %lf.\nblocks to decrypt are %lu bytes long.\n", found_keysize, best_edit_distance, raw_data_size / found_keysize); */
+
+	#if DEBUG
+		printf("Most likely key length: %lu, with normalized edit distance of %f.\nblocks to decrypt are %lu bytes long.\n", found_keysize, best_edit_distance, raw_data_size / found_keysize);
+	#endif
 	
 	byteset_size = raw_data_size / found_keysize;
 	current_byteset = malloc(byteset_size);
@@ -84,15 +91,18 @@ int main(void){
 	current_key_byte = 0;
 
 	for(i = 0; i < found_keysize; i++){
-		/* printf("Working on set %lu\n", i); */
+		#if DEBUG
+			printf("Working on set %lu\n", i);
+		#endif
 		/* reset memory */
 		memset(current_byteset, 0, byteset_size);
 		for(j = 0; j < byteset_size; j++){
-			memcpy(current_byteset+j, raw_encrypted_data+((found_keysize*j)+i), 1);
+			current_byteset[j] = raw_encrypted_data[(found_keysize*j)+i];
 		}
 		decrypt_single_byte_xor(current_output, &current_key_byte, current_byteset, byteset_size);
-		/* printf("current_output: %s\n", current_output); */
-		/* printf("current_key_byte: %#02hhx\n", current_key_byte); */
+		#if DEBUG
+			printf("current_key_byte: 0x%.2x\n", current_key_byte);
+		#endif
 		key[i] = current_key_byte;
 	}
 	
@@ -103,6 +113,7 @@ int main(void){
 	
 	printf("%s\n", decrypted_string);
 	
+	free(raw_encrypted_data);
 	free(decrypted_string);
 	free(current_byteset);
 	free(current_output);

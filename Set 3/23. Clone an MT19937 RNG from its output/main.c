@@ -16,16 +16,20 @@ int main(){
 	uint32_t outputs[624];
 	uint32_t cloned_state[624];
 
+	uint32_t cloned_output;
+
 	setup();
 
 	for(i = 0; i < 624; i++) outputs[i] = mt_rand();
 
 	mt_clone_state(cloned_state, outputs);
-	mt_set_state(cloned_state);
+	mt_set_state(cloned_state, 0);
+
+	cloned_output = mt_rand();
 
 	printf("Replicated state.\n");
-	printf("First RNG value from original state: %u\n", outputs[0]);
-	printf("First RNG value from cloned state: %u\n", mt_rand());
+	printf("First RNG value from original state: %u (0x%.8X)\n", outputs[0], outputs[0]);
+	printf("First RNG value from cloned state: %u (0x%.8X)\n", cloned_output, cloned_output);
 
 	return 0;
 }

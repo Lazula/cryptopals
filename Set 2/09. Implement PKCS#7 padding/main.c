@@ -14,7 +14,7 @@ int main(){
 	size_t padded_string_size;
 	char *hex_encoded_padded_data_string = NULL;
 		
-	padded_data_size = pkcs7_pad(&padded_data, (unsigned char *) input, strlen(input), block_size);
+	pkcs7_pad(&padded_data, &padded_data_size, (unsigned char *) input, strlen(input), block_size);
 	padded_string_size = padded_data_size+1;
 	padded_string = malloc(padded_string_size);
 

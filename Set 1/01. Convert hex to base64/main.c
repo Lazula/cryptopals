@@ -21,7 +21,7 @@ int main(void){
 	if((linebreak = strchr(hex_encoded_string, '\n')) != NULL) *linebreak = '\0';
 	fclose(input_file);
 	
-	raw_data_size = hex_decode(&raw_data, hex_encoded_string);
+	hex_decode(&raw_data, &raw_data_size, hex_encoded_string);
 	
 	base64_encode(&base64_encoded_string, raw_data, raw_data_size);
 	

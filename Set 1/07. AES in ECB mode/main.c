@@ -45,7 +45,7 @@ int main(void){
 	free(line_buffer);
 	fclose(data_file);
 	
-	raw_data_size = base64_decode(&raw_encrypted_data, input_buffer);
+	base64_decode(&raw_encrypted_data, &raw_data_size, input_buffer);
 	
 	free(input_buffer);
 	

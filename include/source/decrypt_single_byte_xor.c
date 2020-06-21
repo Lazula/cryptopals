@@ -6,6 +6,10 @@
 #include "../repeating_key_xor.h"
 #include "../frequency_analysis.h"
 
+#define DEBUG_DECRYPT_SINGLE_BYTE_XOR 0
+#if DEBUG_DECRYPT_SINGLE_BYTE_XOR
+#	include <stdio.h>
+#endif
 
 /*
  * This function makes a best-effort attempt to use analyze_english_plaintext_viability_fast to find a single-byte xor key based on plaintext viability scores
@@ -44,7 +48,10 @@ double decrypt_single_byte_xor(char *output, unsigned char *output_key, unsigned
 		if(current_key_score < best_key_score){
 			best_key_score = current_key_score;
 			best_key = current_key;
-			/* printf("new best score %lf for key %#02x with output text %s\n", best_key_score, best_key, decrypted_string); */
+			#if DEBUG_DECRYPT_SINGLE_BYTE_XOR
+				/*printf("new best score %f for key %#02x with output text %s\n", best_key_score, best_key, decrypted_string);*/
+				printf("new best score %f for key %#02x\n", best_key_score, best_key);
+			#endif
 		}
 	}while(current_key < 255);
 	

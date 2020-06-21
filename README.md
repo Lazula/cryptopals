@@ -2,7 +2,7 @@
 
 This repository contains my solutions to the challenges at cryptopals.com, organized by set.
 
-Each challenge uses a `main.c` file, compiled with `make`, which automatically adds includes files and provides debugging information with gcc's `-g` option. A pre-compiled ELF binary is included as well. Use `make asan` to compile with ASan or `make ubsan` to compile with UBSan. Run `/bin/bash build_all.sh` to automatically run `make` for all challenges if the included binaries do not work (due to different operating system, etc.).
+Each challenge uses a `main.c` file, compiled with `make`, which automatically adds includes files and provides debugging information with gcc's `-g` option. A pre-compiled ELF binary is included as well. Use `make asan` to compile with ASan or `make ubsan` to compile with UBSan. Run `python3 build_all.py` to automatically run `make` for all challenges if the included binaries do not work (due to different operating system, etc.).
 
 The `include` directory is a collection of header and source files containing helper functions that are used in multiple places, such as encoder/decoder functions and ciphers.
 

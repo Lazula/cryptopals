@@ -20,7 +20,7 @@ int main(void){
 		linebreak = strchr(line_buffer, '\n');
 		if(linebreak != NULL) *linebreak = '\0';
 		raw_encrypted_data = NULL;
-		raw_data_size = hex_decode(&raw_encrypted_data, line_buffer);
+		hex_decode(&raw_encrypted_data, &raw_data_size, line_buffer);
 
 		if(is_aes_ecb(raw_encrypted_data, raw_data_size) == 0){
 			printf("Detected AES-ECB on line %lu with hex data: %s\n", current_line, line_buffer);

@@ -61,6 +61,8 @@ int main(){
 		printf("Failed to authenticate.\n");
 	}
 
+	free(encrypted_data);
+
 	return 0;
 }
 

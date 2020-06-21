@@ -26,7 +26,7 @@ int main(void){
 	fclose(data_file);
 	if((linebreak = strchr(hex_encoded_data, '\n')) != NULL) *linebreak = '\0';
 	
-	raw_data_size = hex_decode(&raw_data, hex_encoded_data);
+	hex_decode(&raw_data, &raw_data_size, hex_encoded_data);
 	
 	decrypted_string_size = raw_data_size+1;
 	decrypted_string = malloc(decrypted_string_size);

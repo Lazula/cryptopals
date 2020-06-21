@@ -161,7 +161,7 @@ int get_secrets(unsigned char **encrypted_secrets, size_t *encrypted_secret_size
 	size_t i;
 
 	for(i = 0; i < 40; i++){
-		current_raw_secret_size = base64_decode(&current_raw_secret, base64_encoded_secrets[i]);
+		base64_decode(&current_raw_secret, &current_raw_secret_size, base64_encoded_secrets[i]);
 		aes_encrypt(&encrypted_secrets[i], &encrypted_secret_sizes[i], current_raw_secret, current_raw_secret_size, KEY, NONCE, AES_CIPHER_CTR, AES_KEY_128);
 
 		free(current_raw_secret);

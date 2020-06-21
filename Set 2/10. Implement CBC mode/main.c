@@ -15,16 +15,10 @@ int main(void){
 	unsigned char *raw_encrypted_data = NULL;
 	size_t raw_data_size;
 	
-	char *key_file_name = "key.txt";
-	FILE *key_file;
-	size_t key_buf_size = 512;
-	char *key_buf, *endptr;
-	size_t key_size;
-
 	unsigned char *key;
 
 	unsigned char *initialization_vector;
-	unsigned char *decrypted_data;
+	unsigned char *decrypted_data = NULL;
 	size_t decrypted_data_size;
 	unsigned char *decrypted_string;
 
@@ -41,33 +35,15 @@ int main(void){
 	}
 	free(line_buffer);
 	fclose(data_file);
-	
-	raw_data_size = base64_decode(&raw_encrypted_data, input_buffer);
-	
-	free(input_buffer);
-	
-	key_file = fopen(key_file_name, "r");
-	key_buf = malloc(key_buf_size);
-	
-	fgets(key_buf, key_buf_size, key_file);
-	key_size = strtol(key_buf, &endptr, 10);
-	if(key_buf == endptr){
-		printf("Failed to read key size from %s\n", key_file_name);
-		exit(EXIT_FAILURE);
-	}
-	
-	key = malloc(key_size);
 
-	if(fread(key, 1, key_size, key_file) != key_size){
-		printf("Key was not 16 bytes. Quitting.\n");
-		exit(EXIT_FAILURE);
-	}
-	
-	fclose(key_file);
-	
+	base64_decode(&raw_encrypted_data, &raw_data_size, input_buffer);
+
+	free(input_buffer);
+
+	key = (unsigned char *) "YELLOW SUBMARINE";
 	initialization_vector = (unsigned char *) "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
 	decrypted_data = NULL;
-	
+
 	aes_decrypt(&decrypted_data, &decrypted_data_size, raw_encrypted_data, raw_data_size, key, initialization_vector, AES_CIPHER_CBC, AES_KEY_128);
 
 	/* Copy raw data bytes into a buffer with space for a null byte */
@@ -75,13 +51,11 @@ int main(void){
 	memcpy(decrypted_string, decrypted_data, decrypted_data_size);
 	decrypted_string[decrypted_data_size] = '\0';
 	free(decrypted_data);
-	
+
 	printf("%s", decrypted_string);
-	
-	free(decrypted_string);	
+
+	free(decrypted_string);
 	free(raw_encrypted_data);
-	free(key);
-	free(key_buf);
 
 	return 0;
 }

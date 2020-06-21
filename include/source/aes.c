@@ -201,9 +201,11 @@ int aes_encrypt(unsigned char **output_ptr, size_t *output_size_ptr, unsigned ch
 			state_to_arr(nonce_buffer, state);
 
 			/* XOR the ciphered state with the plaintext before copying into output */
-			for(i = 0; i < 16; i++){
-				if(i + input_index == input_buffer_size) break;
-				(*output_ptr)[input_index + i] = nonce_buffer[i] ^ input_buffer[input_index + i];
+			if(output_ptr != NULL){
+				for(i = 0; i < 16; i++){
+					if(i + input_index == input_buffer_size) break;
+					(*output_ptr)[input_index + i] = nonce_buffer[i] ^ input_buffer[input_index + i];
+				}
 			}
 		}else{
 			/* Take the next block of input data into the state matrix */
@@ -394,22 +396,31 @@ int aes_decrypt(unsigned char **output_ptr, size_t *output_size_ptr, unsigned ch
 
 			state_to_arr(nonce_buffer, state);
 
-			/* output_buffer (*output_ptr) may not be allocated.
-			 * ECB/CBC let the unpad function handle this, but it
-			 * needs to be done manually here.
-			 */
-			if(output_buffer != NULL)
-				/* Track current index relative to input size to avoid out-of-bounds write */
-				for(i = 0; input_index + i < output_buffer_size; i++)
+			/* XOR the ciphered state with the plaintext before copying into output */
+			if(output_ptr != NULL){
+				for(i = 0; i < 16; i++){
+					if(i + input_index == output_buffer_size) break;
 					(*output_ptr)[input_index + i] = nonce_buffer[i] ^ input[input_index + i];
+				}
+			}
 		}else{
 			arr_to_state(state, input+input_index);
 
-			if(cipher_type == AES_CIPHER_CBC) memcpy(temp_current_state, state, AES_BLOCK_SIZE);
+			if(cipher_type == AES_CIPHER_CBC) memcpy(temp_current_state, state, sizeof(struct aes_state));
+
+			#if INTERNAL_ENABLE_AES_DEBUG_FUNCTIONS
+			printf("Starting with state:\n");
+			dump_state(state);
+			#endif
 
 			inv_cipher(state, key_schedule);
 
 			if(cipher_type == AES_CIPHER_CBC){
+				#if INTERNAL_ENABLE_AES_DEBUG_FUNCTIONS
+				printf("State before xor:\n");
+				dump_state(state);
+				#endif
+
 				if(input_index == 0){
 					/* Apply IV */
 					for(i = 0; i < 4; i++)
@@ -422,7 +433,13 @@ int aes_decrypt(unsigned char **output_ptr, size_t *output_size_ptr, unsigned ch
 							state -> bytes[i][j] ^= prev_state -> bytes[i][j];
 				}
 			}
-		
+
+
+			#if INTERNAL_ENABLE_AES_DEBUG_FUNCTIONS
+			printf("Finishing with state:\n");
+			dump_state(state);
+			#endif
+
 			if(cipher_type == AES_CIPHER_CBC) memcpy(prev_state, temp_current_state, sizeof(struct aes_state));
 
 			/* Copy the invciphered state into output */

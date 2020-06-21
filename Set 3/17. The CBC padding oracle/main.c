@@ -183,7 +183,7 @@ int get_encrypted_message(unsigned char **output_ptr, size_t *output_size_ptr, u
 	memcpy(secret, "AAAABBBBCCCCDDDDEEEEFFFFGGGGHHHH00001111", secret_size);
 	#else
 	srand(time(NULL));
-	secret_size = base64_decode(&secret, base64_encoded_secrets[rand() % 10]);
+	base64_decode(&secret, &secret_size, base64_encoded_secrets[rand() % 10]);
 	#endif
 
 	aes_encrypt(&encrypted_secret, &encrypted_secret_size, secret, secret_size, KEY, IV, AES_CIPHER_CBC, AES_KEY_128);

@@ -123,7 +123,7 @@ int main(void){
 					      "dXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUg"
 					      "YnkK";
 	secret_data = NULL;
-	secret_data_size = base64_decode(&secret_data, base64_encoded_secret_data);
+	base64_decode(&secret_data, &secret_data_size, base64_encoded_secret_data);
 
 	#if USE_RANDOM_PREFIX
 	generate_prefix(&prefix_data, &prefix_data_size);

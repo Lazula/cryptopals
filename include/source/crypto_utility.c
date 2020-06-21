@@ -28,18 +28,17 @@ int pkcs7_pad(unsigned char **output_ptr, size_t *output_size_ptr, unsigned char
 		if(*output_ptr == NULL){
 			*output_ptr = malloc(output_size);
 		}
+
+		memcpy(*output_ptr, input, input_size);
+		if(padding_amount > 0){
+			memset(*output_ptr+input_size, padding_amount, padding_amount);
+		}
 	}
 	
 	if(output_size_ptr != NULL) *output_size_ptr = output_size;
 
-	/* Copy data into *output_ptr and apply padding, if applicable */
-	memcpy(*output_ptr, input, input_size);
-	if(padding_amount > 0){
-		memset(*output_ptr+input_size, padding_amount, padding_amount);
-		return 0;
-	}else{
-		return 1;
-	}
+	if(padding_amount > 0) return 0;
+	else return 1;
 }
 
 /* 
@@ -87,9 +86,5 @@ int pkcs7_unpad(unsigned char **output_ptr, size_t *output_size_ptr, unsigned ch
 
 	if(output_size_ptr != NULL && flag_bad_padding == 0) *output_size_ptr = output_size;
 	
-	if(flag_bad_padding == 0){
-		return 0;
-	}else{
-		return 1;
-	}
+	return flag_bad_padding;
 }

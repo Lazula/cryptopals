@@ -20,7 +20,7 @@ int main(){
 
 		if(current_rng_result == recent_rng_result){
 			found_past_seed = current_time_seed-i;
-			printf("Found seed %u seconds in the past: %u\n", i, found_past_seed);
+			printf("Found seed %u seconds in the past: %u (0x%.8X)\n", i, found_past_seed, found_past_seed);
 			break;
 		}
 	}

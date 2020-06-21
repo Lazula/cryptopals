@@ -25,14 +25,14 @@ int main(void){
 	if((linebreak = strchr(hex_encoded_data, '\n')) != NULL) *linebreak = '\0';
 	fclose(data_file);
 	
-	raw_data_size = hex_decode(&raw_data, hex_encoded_data);
+	hex_decode(&raw_data, &raw_data_size, hex_encoded_data);
 	
 	key_file = fopen("key.txt", "r");
 	fgets(hex_encoded_key, key_buffer_size, key_file);
 	if((linebreak = strchr(hex_encoded_key, '\n')) != NULL) *linebreak = '\0';
 	fclose(key_file);
 	
-	raw_key_size = hex_decode(&raw_key, hex_encoded_key);
+	hex_decode(&raw_key, &raw_key_size, hex_encoded_key);
 	if(raw_data_size != raw_key_size){
 		printf("Data and key size differ. Cannot use fixed_xor.");
 		exit(EXIT_FAILURE);

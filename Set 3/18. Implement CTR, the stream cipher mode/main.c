@@ -26,7 +26,7 @@ int main(){
 	NONCE = malloc(8);
 	memset(NONCE, 0, 8);
 
-	ciphertext_size = base64_decode(&ciphertext, base64_encoded_ciphertext);
+	base64_decode(&ciphertext, &ciphertext_size, base64_encoded_ciphertext);
 
 	aes_decrypt(&plaintext, &plaintext_size, ciphertext, ciphertext_size, KEY, NONCE, AES_CIPHER_CTR, AES_KEY_128);
 

@@ -6,6 +6,8 @@
 #include "../../include/hex_encoding.h"
 #include "../../include/decrypt_single_byte_xor.h"
 
+#define DEBUG 0
+
 int main(void){
 	FILE *data_file;
 	size_t data_buffer_size = 1024;
@@ -30,7 +32,7 @@ int main(void){
 		if(linebreak != NULL) *linebreak = '\0';
 
 		hex_encoded_data_size = strlen(hex_encoded_data);
-		raw_data_size = hex_decode(&raw_data, hex_encoded_data);
+		hex_decode(&raw_data, &raw_data_size, hex_encoded_data);
 		decrypted_data_size = raw_data_size+1;
 		decrypted_data = malloc(decrypted_data_size);
 
@@ -51,7 +53,9 @@ int main(void){
 			memcpy(best_answer_hex, hex_encoded_data, hex_encoded_data_size);
 			best_answer_hex[hex_encoded_data_size] = '\0';
 
-			printf("new best key %#02x with score %f with text \"%s\"\n", current_best_key, best_output_score, decrypted_data);
+			#if DEBUG
+				printf("new best key %#02x with score %f with text \"%s\"\n", current_best_key, best_output_score, decrypted_data);
+			#endif
 		}
 
 		free(raw_data);

@@ -138,7 +138,7 @@ int get_secrets(unsigned char **encrypted_secrets, size_t *encrypted_secret_size
 	secrets_file = fopen("secrets.txt", "r");
 	for(i = 0; i < 60; i++){
 		fgets(line_buffer, 256, secrets_file);
-		current_raw_secret_size = base64_decode(&current_raw_secret, line_buffer);
+		base64_decode(&current_raw_secret, &current_raw_secret_size, line_buffer);
 		aes_encrypt(&encrypted_secrets[i], &encrypted_secret_sizes[i], current_raw_secret, current_raw_secret_size, KEY, NONCE, AES_CIPHER_CTR, AES_KEY_128);
 
 		free(current_raw_secret);
