@@ -9,9 +9,12 @@ The `include` directory is a collection of header and source files containing he
 Tools used:
 * tmux - Session management
 * vim - All text file editing
-* gcc - Compiling and inserting automatic 0xcc debug traps with asm("int3");
+* gcc - Compiling and adding debug information
 * gdb - Debugging, instruction stepping, memory examination
 * asan - gcc flag -fsanitize=address displays memory overread/overwrite and memory leaks
+
+## endianness
+`include/local_endian.h` is present to make endian-dependent code portable. By default, it will compile with little-endian support enabled. A simple preprocessor directive can be edited in the source to switch between little- and big-endian modes. Unfortunately, this could not be done automatically while adhering strictly to the C Standard, as it leaves all concerns of endianness implementation-defined (in fact, the C89 standard does not contain any references to endianness). Word-based endianness (e.g PDP, Honeywell) is not supported.
 
 ## warnings
 The code here should absolutely not be used for serious encryption - it's a series of challenges about the *weaknesses* of these methods, after all.

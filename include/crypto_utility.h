@@ -13,7 +13,7 @@
 #if CHAR_BIT == 8
 	typedef unsigned char uint8_t;
 #else
-#	error No 8-bit type available. Cannot typedef uint8_t.
+#	error "No 8-bit type available. Cannot typedef uint8_t."
 #endif
 
 /* 32-bit maximum */
@@ -22,10 +22,35 @@
 #elif ULONG_MAX == 4294967295
 	typedef unsigned long uint32_t;
 #else
-#	error No 32-bit type available. Cannot typedef uint32_t.
+#	error "No 32-bit type available. Cannot typedef uint32_t."
 #endif
 
 int pkcs7_pad(unsigned char **output_ptr, size_t *output_size_ptr, unsigned char *input, size_t input_size, size_t block_size);
 int pkcs7_unpad(unsigned char **output_ptr, size_t *output_size_ptr, unsigned char *input, size_t input_size, size_t block_size);
+
+/* Define endian-dependency macros if we have endian support */
+#ifdef LOCAL_ENDIAN_H
+#	if LOCAL_ENDIANNESS == LOCAL_ENDIAN_LITTLE
+#		define UINT32_T_HOST_TO_BIG_ENDIAN(N) (	\
+			  ((N & 0x000000FF) << 24)	\
+			| ((N & 0x0000FF00) <<  8)	\
+			| ((N & 0x00FF0000) >>  8)	\
+			| ((N & 0xFF000000) >> 24)	\
+		)
+
+#		define UINT32_T_BIG_TO_HOST_ENDIAN(N) (	\
+			  ((N & 0x000000FF) << 24)	\
+			| ((N & 0x0000FF00) <<  8)	\
+			| ((N & 0x00FF0000) >>  8)	\
+			| ((N & 0xFF000000) >> 24)	\
+		)
+#	else /* LOCAL_ENDIANNESS == LOCAL_ENDIAN_BIG */
+		/* Host is already big-endian */
+#		define UINT32_T_HOST_TO_BIG_ENDIAN(N) (N)
+#		define UINT32_T_BIG_TO_HOST_ENDIAN(N) (N)
+#	endif
+#	define UINT32_T_ROTATE_LEFT(N, R) ( (N << R) | (N >> (32-R)) )
+#	define UINT32_T_ROTATE_RIGHT(N, R) ( (N >> R) | (N << (32-R)) )
+#endif /* ifdef LOCAL_ENDIAN_H */
 
 #endif
