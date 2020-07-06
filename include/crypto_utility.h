@@ -37,20 +37,34 @@ int pkcs7_unpad(unsigned char **output_ptr, size_t *output_size_ptr, unsigned ch
 			| ((N & 0x00FF0000) >>  8)	\
 			| ((N & 0xFF000000) >> 24)	\
 		)
-
 #		define UINT32_T_BIG_TO_HOST_ENDIAN(N) (	\
 			  ((N & 0x000000FF) << 24)	\
 			| ((N & 0x0000FF00) <<  8)	\
 			| ((N & 0x00FF0000) >>  8)	\
 			| ((N & 0xFF000000) >> 24)	\
 		)
+		/* Host is already little-endian */
+#		define UINT32_T_HOST_TO_LITTLE_ENDIAN(N) (N)
+#		define UINT32_T_LITTLE_TO_HOST_ENDIAN(N) (N)
 #	else /* LOCAL_ENDIANNESS == LOCAL_ENDIAN_BIG */
+#		define UINT32_T_HOST_TO_LITTLE_ENDIAN(N) (	\
+			  ((N & 0x000000FF) << 24)		\
+			| ((N & 0x0000FF00) <<  8)		\
+			| ((N & 0x00FF0000) >>  8)		\
+			| ((N & 0xFF000000) >> 24)		\
+		)
+#		define UINT32_T_LITTLE_TO_HOST_ENDIAN(N) (	\
+			  ((N & 0x000000FF) << 24)		\
+			| ((N & 0x0000FF00) <<  8)		\
+			| ((N & 0x00FF0000) >>  8)		\
+			| ((N & 0xFF000000) >> 24)		\
+		)
 		/* Host is already big-endian */
 #		define UINT32_T_HOST_TO_BIG_ENDIAN(N) (N)
 #		define UINT32_T_BIG_TO_HOST_ENDIAN(N) (N)
 #	endif
-#	define UINT32_T_ROTATE_LEFT(N, R) ( (N << R) | (N >> (32-R)) )
-#	define UINT32_T_ROTATE_RIGHT(N, R) ( (N >> R) | (N << (32-R)) )
+#	define UINT32_T_ROTATE_LEFT(N, R) ( ((N) << R) | ((N) >> (32-R)) )
+#	define UINT32_T_ROTATE_RIGHT(N, R) ( ((N) >> R) | ((N) << (32-R)) )
 #endif /* ifdef LOCAL_ENDIAN_H */
 
 #endif
