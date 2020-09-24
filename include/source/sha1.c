@@ -33,11 +33,11 @@ int sha1_append_data(unsigned char **output_hash_ptr, unsigned char *input_hash,
 	memcpy(&h3, input_hash+(sizeof(uint32_t)*3), sizeof(uint32_t));
 	memcpy(&h4, input_hash+(sizeof(uint32_t)*4), sizeof(uint32_t));
 
-	h0 = UINT32_T_HOST_TO_BIG_ENDIAN(h0);
-	h1 = UINT32_T_HOST_TO_BIG_ENDIAN(h1);
-	h2 = UINT32_T_HOST_TO_BIG_ENDIAN(h2);
-	h3 = UINT32_T_HOST_TO_BIG_ENDIAN(h3);
-	h4 = UINT32_T_HOST_TO_BIG_ENDIAN(h4);
+	h0 = UINT32_HOST_TO_BIG_ENDIAN(h0);
+	h1 = UINT32_HOST_TO_BIG_ENDIAN(h1);
+	h2 = UINT32_HOST_TO_BIG_ENDIAN(h2);
+	h3 = UINT32_HOST_TO_BIG_ENDIAN(h3);
+	h4 = UINT32_HOST_TO_BIG_ENDIAN(h4);
 
 	/* Get the correct message length. */
 	sha1_pad_data(NULL, &padded_previous_message_length, NULL, previous_message_length, 0);
@@ -83,7 +83,7 @@ int sha1_pad_data(unsigned char **output_ptr, size_t *output_size_ptr, unsigned 
 	padded_data[input_data_size] = (unsigned char) 0x80;
 
 	ml = (input_data_size + bytes_already_processed) * CHAR_BIT;
-	ml_big_endian = UINT32_T_HOST_TO_BIG_ENDIAN(ml);
+	ml_big_endian = UINT32_HOST_TO_BIG_ENDIAN(ml);
 	memcpy(padded_data+input_data_size+bytes_to_add+sizeof(uint32_t), &ml_big_endian, sizeof(uint32_t));
 
 	return 0;
@@ -125,7 +125,7 @@ int sha1_internal(unsigned char **output_ptr, unsigned char *input, size_t input
 		memcpy(current_block, preprocessed_input+i, SHA1_BLOCK_SIZE);
 		for(j = 0; j < 16; j++){
 			memcpy(&w[j], current_block+(j*sizeof(uint32_t)), sizeof(uint32_t));
-			w[j] = UINT32_T_HOST_TO_BIG_ENDIAN(w[j]);
+			w[j] = UINT32_HOST_TO_BIG_ENDIAN(w[j]);
 		}
 
 		#if DEBUG_SHA1 && 1
@@ -135,7 +135,7 @@ int sha1_internal(unsigned char **output_ptr, unsigned char *input, size_t input
 		#endif
 
 		for(j = 16; j < 80; j++){
-			w[j] = UINT32_T_ROTATE_LEFT((w[j-3] ^ w[j-8] ^ w[j-14] ^ w[j-16]), 1);
+			w[j] = UINT32_ROTATE_LEFT((w[j-3] ^ w[j-8] ^ w[j-14] ^ w[j-16]), 1);
 		}
 
 
@@ -160,10 +160,10 @@ int sha1_internal(unsigned char **output_ptr, unsigned char *input, size_t input
 				k = 0xCA62C1D6;
 			}
 
-			temp = UINT32_T_ROTATE_LEFT(a, 5) + f + e + k + w[j];
+			temp = UINT32_ROTATE_LEFT(a, 5) + f + e + k + w[j];
 			e = d;
 			d = c;
-			c = UINT32_T_ROTATE_LEFT(b, 30);
+			c = UINT32_ROTATE_LEFT(b, 30);
 			b = a;
 			a = temp;
 		}
@@ -185,11 +185,11 @@ int sha1_internal(unsigned char **output_ptr, unsigned char *input, size_t input
 		printf("\n");
 	#endif
 
-	h0 = UINT32_T_BIG_TO_HOST_ENDIAN(h0);
-	h1 = UINT32_T_BIG_TO_HOST_ENDIAN(h1);
-	h2 = UINT32_T_BIG_TO_HOST_ENDIAN(h2);
-	h3 = UINT32_T_BIG_TO_HOST_ENDIAN(h3);
-	h4 = UINT32_T_BIG_TO_HOST_ENDIAN(h4);
+	h0 = UINT32_BIG_TO_HOST_ENDIAN(h0);
+	h1 = UINT32_BIG_TO_HOST_ENDIAN(h1);
+	h2 = UINT32_BIG_TO_HOST_ENDIAN(h2);
+	h3 = UINT32_BIG_TO_HOST_ENDIAN(h3);
+	h4 = UINT32_BIG_TO_HOST_ENDIAN(h4);
 
 	memcpy(hh+(sizeof(uint32_t)*0), &h0, sizeof(uint32_t));
 	memcpy(hh+(sizeof(uint32_t)*1), &h1, sizeof(uint32_t));

@@ -36,10 +36,10 @@ int md4_append_data(unsigned char **output_hash_ptr, unsigned char *input_hash, 
 	memcpy(&c, input_hash+(sizeof(uint32_t)*2), sizeof(uint32_t));
 	memcpy(&d, input_hash+(sizeof(uint32_t)*3), sizeof(uint32_t));
 
-	a = UINT32_T_HOST_TO_LITTLE_ENDIAN(a);
-	b = UINT32_T_HOST_TO_LITTLE_ENDIAN(b);
-	c = UINT32_T_HOST_TO_LITTLE_ENDIAN(c);
-	d = UINT32_T_HOST_TO_LITTLE_ENDIAN(d);
+	a = UINT32_HOST_TO_LITTLE_ENDIAN(a);
+	b = UINT32_HOST_TO_LITTLE_ENDIAN(b);
+	c = UINT32_HOST_TO_LITTLE_ENDIAN(c);
+	d = UINT32_HOST_TO_LITTLE_ENDIAN(d);
 
 	/* Get the correct message length. */
 	md4_pad_data(NULL, &padded_previous_message_length, NULL, previous_message_length, 0);
@@ -84,7 +84,7 @@ int md4_pad_data(unsigned char **output_ptr, size_t *output_size_ptr, unsigned c
 	padded_data[input_data_size] = (unsigned char) 0x80;
 
 	b = (input_data_size + bytes_already_processed) * CHAR_BIT;
-	b_little_endian = UINT32_T_HOST_TO_LITTLE_ENDIAN(b);
+	b_little_endian = UINT32_HOST_TO_LITTLE_ENDIAN(b);
 	memcpy(padded_data+input_data_size+bytes_to_add+sizeof(uint32_t), &b_little_endian, sizeof(uint32_t));
 
 	return 0;
@@ -123,7 +123,7 @@ int md4_internal(unsigned char **output_ptr, unsigned char *input, size_t input_
 		memcpy(current_block, preprocessed_input+i, MD4_BLOCK_SIZE);
 		for(j = 0; j < 16; j++){
 			memcpy(&X[j], current_block+(j*sizeof(uint32_t)), sizeof(uint32_t));
-			X[j] = UINT32_T_HOST_TO_LITTLE_ENDIAN(X[j]);
+			X[j] = UINT32_HOST_TO_LITTLE_ENDIAN(X[j]);
 		}
 
 		#if DEBUG_MD4 && 1
@@ -146,22 +146,22 @@ int md4_internal(unsigned char **output_ptr, unsigned char *input, size_t input_
 			printf("\n");
 		#endif
 
-		a = UINT32_T_ROTATE_LEFT(a + MD4_INTERNAL_FUNC_F(b, c, d) + X[ 0], 3);
-		d = UINT32_T_ROTATE_LEFT(d + MD4_INTERNAL_FUNC_F(a, b, c) + X[ 1], 7);
-		c = UINT32_T_ROTATE_LEFT(c + MD4_INTERNAL_FUNC_F(d, a, b) + X[ 2], 11);
-		b = UINT32_T_ROTATE_LEFT(b + MD4_INTERNAL_FUNC_F(c, d, a) + X[ 3], 19);
-		a = UINT32_T_ROTATE_LEFT(a + MD4_INTERNAL_FUNC_F(b, c, d) + X[ 4], 3);
-		d = UINT32_T_ROTATE_LEFT(d + MD4_INTERNAL_FUNC_F(a, b, c) + X[ 5], 7);
-		c = UINT32_T_ROTATE_LEFT(c + MD4_INTERNAL_FUNC_F(d, a, b) + X[ 6], 11);
-		b = UINT32_T_ROTATE_LEFT(b + MD4_INTERNAL_FUNC_F(c, d, a) + X[ 7], 19);
-		a = UINT32_T_ROTATE_LEFT(a + MD4_INTERNAL_FUNC_F(b, c, d) + X[ 8], 3);
-		d = UINT32_T_ROTATE_LEFT(d + MD4_INTERNAL_FUNC_F(a, b, c) + X[ 9], 7);
-		c = UINT32_T_ROTATE_LEFT(c + MD4_INTERNAL_FUNC_F(d, a, b) + X[10], 11);
-		b = UINT32_T_ROTATE_LEFT(b + MD4_INTERNAL_FUNC_F(c, d, a) + X[11], 19);
-		a = UINT32_T_ROTATE_LEFT(a + MD4_INTERNAL_FUNC_F(b, c, d) + X[12], 3);
-		d = UINT32_T_ROTATE_LEFT(d + MD4_INTERNAL_FUNC_F(a, b, c) + X[13], 7);
-		c = UINT32_T_ROTATE_LEFT(c + MD4_INTERNAL_FUNC_F(d, a, b) + X[14], 11);
-		b = UINT32_T_ROTATE_LEFT(b + MD4_INTERNAL_FUNC_F(c, d, a) + X[15], 19);
+		a = UINT32_ROTATE_LEFT(a + MD4_INTERNAL_FUNC_F(b, c, d) + X[ 0], 3);
+		d = UINT32_ROTATE_LEFT(d + MD4_INTERNAL_FUNC_F(a, b, c) + X[ 1], 7);
+		c = UINT32_ROTATE_LEFT(c + MD4_INTERNAL_FUNC_F(d, a, b) + X[ 2], 11);
+		b = UINT32_ROTATE_LEFT(b + MD4_INTERNAL_FUNC_F(c, d, a) + X[ 3], 19);
+		a = UINT32_ROTATE_LEFT(a + MD4_INTERNAL_FUNC_F(b, c, d) + X[ 4], 3);
+		d = UINT32_ROTATE_LEFT(d + MD4_INTERNAL_FUNC_F(a, b, c) + X[ 5], 7);
+		c = UINT32_ROTATE_LEFT(c + MD4_INTERNAL_FUNC_F(d, a, b) + X[ 6], 11);
+		b = UINT32_ROTATE_LEFT(b + MD4_INTERNAL_FUNC_F(c, d, a) + X[ 7], 19);
+		a = UINT32_ROTATE_LEFT(a + MD4_INTERNAL_FUNC_F(b, c, d) + X[ 8], 3);
+		d = UINT32_ROTATE_LEFT(d + MD4_INTERNAL_FUNC_F(a, b, c) + X[ 9], 7);
+		c = UINT32_ROTATE_LEFT(c + MD4_INTERNAL_FUNC_F(d, a, b) + X[10], 11);
+		b = UINT32_ROTATE_LEFT(b + MD4_INTERNAL_FUNC_F(c, d, a) + X[11], 19);
+		a = UINT32_ROTATE_LEFT(a + MD4_INTERNAL_FUNC_F(b, c, d) + X[12], 3);
+		d = UINT32_ROTATE_LEFT(d + MD4_INTERNAL_FUNC_F(a, b, c) + X[13], 7);
+		c = UINT32_ROTATE_LEFT(c + MD4_INTERNAL_FUNC_F(d, a, b) + X[14], 11);
+		b = UINT32_ROTATE_LEFT(b + MD4_INTERNAL_FUNC_F(c, d, a) + X[15], 19);
 
 		#if DEBUG_MD4 && 1
 			printf("Little-endian state values after round 1:\n");
@@ -172,22 +172,22 @@ int md4_internal(unsigned char **output_ptr, unsigned char *input, size_t input_
 			printf("\n");
 		#endif
 
-		a = UINT32_T_ROTATE_LEFT(a + MD4_INTERNAL_FUNC_G(b, c, d) + X[ 0] + 0x5a827999, 3);
-		d = UINT32_T_ROTATE_LEFT(d + MD4_INTERNAL_FUNC_G(a, b, c) + X[ 4] + 0x5a827999, 5);
-		c = UINT32_T_ROTATE_LEFT(c + MD4_INTERNAL_FUNC_G(d, a, b) + X[ 8] + 0x5a827999, 9);
-		b = UINT32_T_ROTATE_LEFT(b + MD4_INTERNAL_FUNC_G(c, d, a) + X[12] + 0x5a827999, 13);
-		a = UINT32_T_ROTATE_LEFT(a + MD4_INTERNAL_FUNC_G(b, c, d) + X[ 1] + 0x5a827999, 3);
-		d = UINT32_T_ROTATE_LEFT(d + MD4_INTERNAL_FUNC_G(a, b, c) + X[ 5] + 0x5a827999, 5);
-		c = UINT32_T_ROTATE_LEFT(c + MD4_INTERNAL_FUNC_G(d, a, b) + X[ 9] + 0x5a827999, 9);
-		b = UINT32_T_ROTATE_LEFT(b + MD4_INTERNAL_FUNC_G(c, d, a) + X[13] + 0x5a827999, 13);
-		a = UINT32_T_ROTATE_LEFT(a + MD4_INTERNAL_FUNC_G(b, c, d) + X[ 2] + 0x5a827999, 3);
-		d = UINT32_T_ROTATE_LEFT(d + MD4_INTERNAL_FUNC_G(a, b, c) + X[ 6] + 0x5a827999, 5);
-		c = UINT32_T_ROTATE_LEFT(c + MD4_INTERNAL_FUNC_G(d, a, b) + X[10] + 0x5a827999, 9);
-		b = UINT32_T_ROTATE_LEFT(b + MD4_INTERNAL_FUNC_G(c, d, a) + X[13] + 0x5a827999, 13);
-		a = UINT32_T_ROTATE_LEFT(a + MD4_INTERNAL_FUNC_G(b, c, d) + X[ 3] + 0x5a827999, 3);
-		d = UINT32_T_ROTATE_LEFT(d + MD4_INTERNAL_FUNC_G(a, b, c) + X[ 7] + 0x5a827999, 5);
-		c = UINT32_T_ROTATE_LEFT(c + MD4_INTERNAL_FUNC_G(d, a, b) + X[11] + 0x5a827999, 9);
-		b = UINT32_T_ROTATE_LEFT(b + MD4_INTERNAL_FUNC_G(c, d, a) + X[15] + 0x5a827999, 13);
+		a = UINT32_ROTATE_LEFT(a + MD4_INTERNAL_FUNC_G(b, c, d) + X[ 0] + 0x5a827999, 3);
+		d = UINT32_ROTATE_LEFT(d + MD4_INTERNAL_FUNC_G(a, b, c) + X[ 4] + 0x5a827999, 5);
+		c = UINT32_ROTATE_LEFT(c + MD4_INTERNAL_FUNC_G(d, a, b) + X[ 8] + 0x5a827999, 9);
+		b = UINT32_ROTATE_LEFT(b + MD4_INTERNAL_FUNC_G(c, d, a) + X[12] + 0x5a827999, 13);
+		a = UINT32_ROTATE_LEFT(a + MD4_INTERNAL_FUNC_G(b, c, d) + X[ 1] + 0x5a827999, 3);
+		d = UINT32_ROTATE_LEFT(d + MD4_INTERNAL_FUNC_G(a, b, c) + X[ 5] + 0x5a827999, 5);
+		c = UINT32_ROTATE_LEFT(c + MD4_INTERNAL_FUNC_G(d, a, b) + X[ 9] + 0x5a827999, 9);
+		b = UINT32_ROTATE_LEFT(b + MD4_INTERNAL_FUNC_G(c, d, a) + X[13] + 0x5a827999, 13);
+		a = UINT32_ROTATE_LEFT(a + MD4_INTERNAL_FUNC_G(b, c, d) + X[ 2] + 0x5a827999, 3);
+		d = UINT32_ROTATE_LEFT(d + MD4_INTERNAL_FUNC_G(a, b, c) + X[ 6] + 0x5a827999, 5);
+		c = UINT32_ROTATE_LEFT(c + MD4_INTERNAL_FUNC_G(d, a, b) + X[10] + 0x5a827999, 9);
+		b = UINT32_ROTATE_LEFT(b + MD4_INTERNAL_FUNC_G(c, d, a) + X[13] + 0x5a827999, 13);
+		a = UINT32_ROTATE_LEFT(a + MD4_INTERNAL_FUNC_G(b, c, d) + X[ 3] + 0x5a827999, 3);
+		d = UINT32_ROTATE_LEFT(d + MD4_INTERNAL_FUNC_G(a, b, c) + X[ 7] + 0x5a827999, 5);
+		c = UINT32_ROTATE_LEFT(c + MD4_INTERNAL_FUNC_G(d, a, b) + X[11] + 0x5a827999, 9);
+		b = UINT32_ROTATE_LEFT(b + MD4_INTERNAL_FUNC_G(c, d, a) + X[15] + 0x5a827999, 13);
 
 		#if DEBUG_MD4 && 1
 			printf("Little-endian state values after round 2:\n");
@@ -198,22 +198,22 @@ int md4_internal(unsigned char **output_ptr, unsigned char *input, size_t input_
 			printf("\n");
 		#endif
 
-		a = UINT32_T_ROTATE_LEFT(a + MD4_INTERNAL_FUNC_H(b, c, d) + X[ 0] + 0x6Ed9Eba1, 3);
-		d = UINT32_T_ROTATE_LEFT(d + MD4_INTERNAL_FUNC_H(a, b, c) + X[ 8] + 0x6Ed9Eba1, 9);
-		c = UINT32_T_ROTATE_LEFT(c + MD4_INTERNAL_FUNC_H(d, a, b) + X[ 4] + 0x6Ed9Eba1, 11);
-		b = UINT32_T_ROTATE_LEFT(b + MD4_INTERNAL_FUNC_H(c, d, a) + X[12] + 0x6Ed9Eba1, 15);
-		a = UINT32_T_ROTATE_LEFT(a + MD4_INTERNAL_FUNC_H(b, c, d) + X[ 2] + 0x6Ed9Eba1, 3);
-		d = UINT32_T_ROTATE_LEFT(d + MD4_INTERNAL_FUNC_H(a, b, c) + X[10] + 0x6Ed9Eba1, 9);
-		c = UINT32_T_ROTATE_LEFT(c + MD4_INTERNAL_FUNC_H(d, a, b) + X[ 6] + 0x6Ed9Eba1, 11);
-		b = UINT32_T_ROTATE_LEFT(b + MD4_INTERNAL_FUNC_H(c, d, a) + X[14] + 0x6Ed9Eba1, 15);
-		a = UINT32_T_ROTATE_LEFT(a + MD4_INTERNAL_FUNC_H(b, c, d) + X[ 1] + 0x6Ed9Eba1, 3);
-		d = UINT32_T_ROTATE_LEFT(d + MD4_INTERNAL_FUNC_H(a, b, c) + X[ 9] + 0x6Ed9Eba1, 9);
-		c = UINT32_T_ROTATE_LEFT(c + MD4_INTERNAL_FUNC_H(d, a, b) + X[ 5] + 0x6Ed9Eba1, 11);
-		b = UINT32_T_ROTATE_LEFT(b + MD4_INTERNAL_FUNC_H(c, d, a) + X[13] + 0x6Ed9Eba1, 15);
-		a = UINT32_T_ROTATE_LEFT(a + MD4_INTERNAL_FUNC_H(b, c, d) + X[ 3] + 0x6Ed9Eba1, 3);
-		d = UINT32_T_ROTATE_LEFT(d + MD4_INTERNAL_FUNC_H(a, b, c) + X[11] + 0x6Ed9Eba1, 9);
-		c = UINT32_T_ROTATE_LEFT(c + MD4_INTERNAL_FUNC_H(d, a, b) + X[ 7] + 0x6Ed9Eba1, 11);
-		b = UINT32_T_ROTATE_LEFT(b + MD4_INTERNAL_FUNC_H(c, d, a) + X[15] + 0x6Ed9Eba1, 15);
+		a = UINT32_ROTATE_LEFT(a + MD4_INTERNAL_FUNC_H(b, c, d) + X[ 0] + 0x6Ed9Eba1, 3);
+		d = UINT32_ROTATE_LEFT(d + MD4_INTERNAL_FUNC_H(a, b, c) + X[ 8] + 0x6Ed9Eba1, 9);
+		c = UINT32_ROTATE_LEFT(c + MD4_INTERNAL_FUNC_H(d, a, b) + X[ 4] + 0x6Ed9Eba1, 11);
+		b = UINT32_ROTATE_LEFT(b + MD4_INTERNAL_FUNC_H(c, d, a) + X[12] + 0x6Ed9Eba1, 15);
+		a = UINT32_ROTATE_LEFT(a + MD4_INTERNAL_FUNC_H(b, c, d) + X[ 2] + 0x6Ed9Eba1, 3);
+		d = UINT32_ROTATE_LEFT(d + MD4_INTERNAL_FUNC_H(a, b, c) + X[10] + 0x6Ed9Eba1, 9);
+		c = UINT32_ROTATE_LEFT(c + MD4_INTERNAL_FUNC_H(d, a, b) + X[ 6] + 0x6Ed9Eba1, 11);
+		b = UINT32_ROTATE_LEFT(b + MD4_INTERNAL_FUNC_H(c, d, a) + X[14] + 0x6Ed9Eba1, 15);
+		a = UINT32_ROTATE_LEFT(a + MD4_INTERNAL_FUNC_H(b, c, d) + X[ 1] + 0x6Ed9Eba1, 3);
+		d = UINT32_ROTATE_LEFT(d + MD4_INTERNAL_FUNC_H(a, b, c) + X[ 9] + 0x6Ed9Eba1, 9);
+		c = UINT32_ROTATE_LEFT(c + MD4_INTERNAL_FUNC_H(d, a, b) + X[ 5] + 0x6Ed9Eba1, 11);
+		b = UINT32_ROTATE_LEFT(b + MD4_INTERNAL_FUNC_H(c, d, a) + X[13] + 0x6Ed9Eba1, 15);
+		a = UINT32_ROTATE_LEFT(a + MD4_INTERNAL_FUNC_H(b, c, d) + X[ 3] + 0x6Ed9Eba1, 3);
+		d = UINT32_ROTATE_LEFT(d + MD4_INTERNAL_FUNC_H(a, b, c) + X[11] + 0x6Ed9Eba1, 9);
+		c = UINT32_ROTATE_LEFT(c + MD4_INTERNAL_FUNC_H(d, a, b) + X[ 7] + 0x6Ed9Eba1, 11);
+		b = UINT32_ROTATE_LEFT(b + MD4_INTERNAL_FUNC_H(c, d, a) + X[15] + 0x6Ed9Eba1, 15);
 
 		a += aa;
 		b += bb;
@@ -230,10 +230,10 @@ int md4_internal(unsigned char **output_ptr, unsigned char *input, size_t input_
 		printf("\n");
 	#endif
 
-	a = UINT32_T_LITTLE_TO_HOST_ENDIAN(a);
-	b = UINT32_T_LITTLE_TO_HOST_ENDIAN(b);
-	c = UINT32_T_LITTLE_TO_HOST_ENDIAN(c);
-	d = UINT32_T_LITTLE_TO_HOST_ENDIAN(d);
+	a = UINT32_LITTLE_TO_HOST_ENDIAN(a);
+	b = UINT32_LITTLE_TO_HOST_ENDIAN(b);
+	c = UINT32_LITTLE_TO_HOST_ENDIAN(c);
+	d = UINT32_LITTLE_TO_HOST_ENDIAN(d);
 
 	memcpy(out+(sizeof(uint32_t)*0), &a, sizeof(uint32_t));
 	memcpy(out+(sizeof(uint32_t)*1), &b, sizeof(uint32_t));
