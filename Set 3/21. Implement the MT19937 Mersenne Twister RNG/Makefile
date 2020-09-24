@@ -1,4 +1,4 @@
-CC=cc
+CC=gcc
 CFLAGS=-g -Wall -Wextra -std=c89 -pedantic
 INC_DIR=../../include/source
 LOCAL_INCLUDES=$(INC_DIR)/crypto_utility.c $(INC_DIR)/mt19937.c

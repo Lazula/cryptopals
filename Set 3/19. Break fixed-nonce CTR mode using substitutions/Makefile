@@ -1,4 +1,4 @@
-CC=cc
+CC=gcc
 CFLAGS=-g -Wall -Wextra -std=c89 -pedantic
 INC_DIR=../../include/source
 LOCAL_INCLUDES=$(INC_DIR)/base64.c $(INC_DIR)/crypto_utility.c $(INC_DIR)/aes.c $(INC_DIR)/fixed_xor.c $(INC_DIR)/frequency_analysis.c
