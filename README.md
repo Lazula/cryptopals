@@ -13,6 +13,10 @@ Tools used:
 * gdb - Debugging, instruction stepping, memory examination
 * asan - gcc flag -fsanitize=address displays memory overread/overwrite and memory leaks
 
+## setting up GMP
+
+Beginning with Set 5, bignums are needed. GMP is used to provide support for these large numbers. Download GMP 6.2.0 from `https://ftp.gnu.org/gnu/gmp/`, and install it with the standard `./configure`, `make`, (optionally, `make check` to run self-tests) and `make install`. Compatibility with other GMP versions cannot be guaranteed.
+
 ## endianness
 `include/local_endian.h` is present to make endian-dependent code portable. By default, it will compile with little-endian support enabled. A simple preprocessor directive can be edited in the source to switch between little- and big-endian modes. Unfortunately, this could not be done automatically while adhering strictly to the C Standard, as it leaves all concerns of endianness implementation-defined (in fact, the C89 standard does not contain any references to endianness). PDP and Honeywell endian are not supported.
 
@@ -25,3 +29,5 @@ Machines where CHAR\_BIT != 8 have not been considered. Some things have been ma
 
 ## license
 All code in this project for which I have the authority to do so is released into the public domain via the Unlicense (see LICENSE). I don't own glibc or any of the tools used.
+
+GMP is distributed under the GNU LGPLv3 license.
