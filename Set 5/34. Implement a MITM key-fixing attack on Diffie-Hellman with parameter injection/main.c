@@ -7,53 +7,64 @@
 
 #define DEBUG 0
 
-/* Send parameters from a to b */
-void send_parameters_a(apnum_ptr p, apnum_ptr A);
-/* Send parameters from b to a */
-void send_parameters_b(apnum_ptr B);
+struct dh_paramset {
+	apnum_ptr p;
+	apnum_ptr g;
+	apnum_ptr o; /* Other side */
+	apnum_ptr s;
+};
+typedef struct dh_paramset * dh_paramset_ptr;
+
+dh_paramset_ptr new_dh_paramset(){
+	dh_paramset_ptr ps;
+
+	ps = malloc(sizeof(struct dh_paramset));
+
+	ps -> p = new_apnum();
+	ps -> g = new_apnum();
+	ps -> o = new_apnum();
+	ps -> s = new_apnum();
+
+	return ps;
+}
+
+void free_dh_paramset(dh_paramset_ptr ps){
+	free_apnum(ps -> p);
+	free_apnum(ps -> g);
+	free_apnum(ps -> o);
+	free_apnum(ps -> s);
+	free(ps);
+}
+
 /* Send a message from a to b */
-void send_message(unsigned char *session_key_hash, unsigned char *message, size_t message_size, unsigned char *iv);
-
-/* The above functions call these to simulate a MITM. */
-
-/* Intercept and modify paramters sent from a */
-void intercept_parameters_a(apnum_ptr p, apnum_ptr A);
-/* Intercept and modify parameters sent from b */
-void intercept_parameters_b(apnum_ptr B);
-
-/* Use recorded p and g to decrypt a message */
+void send_message(apnum_ptr session_key, unsigned char *message, size_t message_size, unsigned char *iv);
 void intercept_and_print_message(unsigned char *encrypted_message, size_t encrypted_message_size, unsigned char *iv);
 
-static apnum_ptr RECORDED_P;
+static apnum_ptr PREDICTED_SESSION_KEY;
 
 int main(){
+	dh_paramset_ptr a_params;
+	dh_paramset_ptr b_params;
+
 	dh_keypair_ptr pair_a;
 	dh_keypair_ptr pair_b;
 
-	apnum_ptr p;
-	apnum_ptr g;
-
-	apnum_ptr session_key;
-
-	unsigned char *session_key_hash = NULL;
 	unsigned char *iv = NULL;
 
-	char *message = "Test message.";
+	char *message = "Secret message.";
 
 	apnum_randinit();
+
+	a_params = new_dh_paramset();
+	b_params = new_dh_paramset();
 
 	pair_a = new_dh_keypair();
 	pair_b = new_dh_keypair();
 
-	p = new_apnum();
-	g = new_apnum();
-
-	session_key = new_apnum();
-
-	RECORDED_P = new_apnum();
+	PREDICTED_SESSION_KEY = new_apnum();
 
 	decode_apnum_from_hex(
-		p,
+		a_params -> p,
 		"ffffffffffffffffc90fdaa22168c234c4c6628b80dc1cd129024"
 		"e088a67cc74020bbea63b139b22514a08798e3404ddef9519b3cd"
 		"3a431b302b0a6df25f14374fe1356d6d51c245e485b576625e7ec"
@@ -63,98 +74,86 @@ int main(){
 		"bb9ed529077096966d670c354e4abc9804f1746c08ca237327fff"
 		"fffffffffffff"
 	);
-	uint8_to_apnum(g, 2);
+	uint8_to_apnum(a_params -> g, 2);
+
+	/* p and g are not tampered with. */
+	copy_apnum(b_params -> p, a_params -> p);
+	copy_apnum(b_params -> g, a_params -> g);
+
+	/* Each side generates their keyset. */
+	dh_generate_keypair(pair_a, a_params -> p, a_params -> g);
+	dh_generate_keypair(pair_b, b_params -> p, b_params -> g);
+
+	/* The MITM attack replaces each public key with p while in transit. */
+	copy_apnum(a_params -> o, a_params -> p);
+	copy_apnum(b_params -> o, a_params -> p);
+
+	/* Each side generates their session key. */
+	dh_get_session_key(a_params -> s, pair_a -> private_key, a_params -> o, a_params -> p);
+	dh_get_session_key(a_params -> s, pair_b -> private_key, b_params -> o, b_params -> p);
+
+	/* The attacker can predict that s is 0, since each public key is p.
+	 * (p**X)%p is 0 for any value of X.
+	 *
+	 * This is shown in debug mode below.
+	 */
+	uint8_to_apnum(PREDICTED_SESSION_KEY, 0);
 
 	#if DEBUG
-	printf("p: "); print_apnum_as_hex(p); printf("\n");
-	printf("g: "); print_apnum_as_hex(g); printf("\n");
+	printf("[DEBUG] A's session key: "); print_apnum_as_hex(a_params -> s); printf("\n");
+	printf("[DEBUG] B's session key: "); print_apnum_as_hex(b_params -> s); printf("\n");
 	#endif
-
-	dh_start_session(pair_a, pair_b, p, g);
-
-	#if DEBUG
-	printf("pair_a:\n"); print_dh_keypair(pair_a); printf("\n");
-	printf("pair_b:\n"); print_dh_keypair(pair_b); printf("\n");
-	#endif
-
-	send_parameters_a(p, pair_a -> public_key);
-	send_parameters_b(pair_b -> public_key);
-
-	/* Only p needs to be recorded by the MITM in order to send as B;
-	 * the session key for modexp(B, a, p) when B == p is always 0 */
-
-	dh_get_session_key(session_key, pair_a -> private_key, pair_b -> public_key, p);
-	dh_sha1_session_key(&session_key_hash, session_key);
 
 	generate_random_aes_key(&iv, AES_KEY_128);
-	send_message(session_key_hash, (unsigned char *) message, strlen(message), iv);
-
-	free(session_key_hash);
+	send_message(a_params -> s, (unsigned char *) message, strlen(message), iv);
 	free(iv);
-
-	free_apnum(p);
-	free_apnum(g);
-	free_apnum(session_key);
 
 	free_dh_keypair(pair_a);
 	free_dh_keypair(pair_b);
 
+	free_dh_paramset(a_params);
+	free_dh_paramset(b_params);
+
 	return 0;
 }
 
-/* Send parameters from a to b */
-void send_parameters_a(apnum_ptr p, apnum_ptr A){
-	intercept_parameters_a(p, A);
-}
-
-/* Send parameters from b to a */
-void send_parameters_b(apnum_ptr B){
-	intercept_parameters_b(B);
-}
-
 /* Send a message from a to b */
-void send_message(unsigned char *session_key_hash, unsigned char *message, size_t message_size, unsigned char *iv){
+void send_message(apnum_ptr session_key, unsigned char *message, size_t message_size, unsigned char *iv){
+	unsigned char *session_key_hash = NULL;
+
 	unsigned char *encrypted_message = NULL;
 	size_t encrypted_message_size;
 
+	/* Hash the session key and encrypt */
+	dh_sha1_session_key(&session_key_hash, session_key);
 	aes_encrypt(&encrypted_message, &encrypted_message_size, message, message_size, session_key_hash, iv, AES_CIPHER_CBC, AES_KEY_128);
 
+	/* Only information visible on the wire is passed to the attacker. */
 	intercept_and_print_message(encrypted_message, encrypted_message_size, iv);
 
 	free(encrypted_message);
-}
-
-/* Intercept and modify parameters sent from a */
-void intercept_parameters_a(apnum_ptr p, apnum_ptr A){
-	copy_apnum(RECORDED_P, p);
-
-	/* Modify A to be equal to p */
-	copy_apnum(A, p);
-}
-
-/* Intercept and modify parameters sent from b */
-void intercept_parameters_b(apnum_ptr B){
-	/* Modify B to be equal to p */
-	copy_apnum(B, RECORDED_P);
-	free_apnum(RECORDED_P);
+	free(session_key_hash);
 }
 
 void intercept_and_print_message(unsigned char *encrypted_message, size_t encrypted_message_size, unsigned char *iv){
-	/* hash of 0 as apnum */
-	static unsigned char *set_key = (unsigned char *) "\xb6\x58\x9f\xc6\xab\x0d\xc8\x2c\xf1\x20\x99\xd1\xc2\xd4\x0a\xb9";
+	unsigned char *session_key_hash = NULL;
 
 	unsigned char *decrypted_message = NULL;
 	size_t decrypted_message_size;
 
 	char *decrypted_message_str;
 
-	aes_decrypt(&decrypted_message, &decrypted_message_size, encrypted_message, encrypted_message_size, set_key, iv, AES_CIPHER_CBC, AES_KEY_128);
+	/* Hash the predicted session key and decrypt. */
+	dh_sha1_session_key(&session_key_hash, PREDICTED_SESSION_KEY);
+	aes_decrypt(&decrypted_message, &decrypted_message_size, encrypted_message, encrypted_message_size, session_key_hash, iv, AES_CIPHER_CBC, AES_KEY_128);
+	free(session_key_hash);
 
+	/* The message-in-transit lacks a terminating null byte. */
 	decrypted_message_str = malloc(decrypted_message_size+1);
 	memcpy(decrypted_message_str, decrypted_message, decrypted_message_size);
 	decrypted_message_str[decrypted_message_size] = '\0';
 
-	printf("%s\n", decrypted_message_str);
+	printf("Decrypted: \"%s\"\n", decrypted_message_str);
 
 	free(decrypted_message);
 	free(decrypted_message_str);
