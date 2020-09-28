@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "../../include/sha1.h"
 #include "../../include/diffie_hellman.h"
 #include "../../include/aes.h"
 
@@ -125,7 +126,7 @@ void send_message(apnum_ptr session_key, unsigned char *message, size_t message_
 	size_t encrypted_message_size;
 
 	/* Hash the session key and encrypt */
-	dh_sha1_session_key(&session_key_hash, session_key);
+	apnum_sha1(&session_key_hash, session_key);
 	aes_encrypt(&encrypted_message, &encrypted_message_size, message, message_size, session_key_hash, iv, AES_CIPHER_CBC, AES_KEY_128);
 
 	/* Only information visible on the wire is passed to the attacker. */
@@ -144,7 +145,7 @@ void intercept_and_print_message(unsigned char *encrypted_message, size_t encryp
 	char *decrypted_message_str;
 
 	/* Hash the predicted session key and decrypt. */
-	dh_sha1_session_key(&session_key_hash, PREDICTED_SESSION_KEY);
+	apnum_sha1(&session_key_hash, PREDICTED_SESSION_KEY);
 	aes_decrypt(&decrypted_message, &decrypted_message_size, encrypted_message, encrypted_message_size, session_key_hash, iv, AES_CIPHER_CBC, AES_KEY_128);
 	free(session_key_hash);
 

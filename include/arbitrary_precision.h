@@ -54,4 +54,41 @@ int apnum_modexp(apnum_ptr out, apnum_ptr base, apnum_ptr exp, apnum_ptr mod);
 void apnum_randinit();
 int apnum_rand(apnum_ptr out, apnum_ptr mod);
 
+/* hashing - it's easier to put these in the header where they can have include checks */
+#ifdef MDFOUR_H
+int apnum_md4(unsigned char **out, apnum_ptr in){
+	char *apnum_str = NULL;
+
+	apnum_to_hex_string(&apnum_str, in);
+	md4(out, (unsigned char *) apnum_str, strlen(apnum_str));
+
+	free(apnum_str);
+	return 0;
+}
+#endif
+
+#ifdef SHAONE_H
+int apnum_sha1(unsigned char **out, apnum_ptr in){
+	char *apnum_str = NULL;
+
+	apnum_to_hex_string(&apnum_str, in);
+	sha1(out, (unsigned char *) apnum_str, strlen(apnum_str));
+
+	free(apnum_str);
+	return 0;
+}
+#endif
+
+#ifdef SHATWOFIFTYSIX_H
+int apnum_sha256(unsigned char **out, apnum_ptr in){
+	char *apnum_str = NULL;
+
+	apnum_to_hex_string(&apnum_str, in);
+	sha256(out, (unsigned char *) apnum_str, strlen(apnum_str));
+
+	free(apnum_str);
+	return 0;
+}
+#endif
+
 #endif

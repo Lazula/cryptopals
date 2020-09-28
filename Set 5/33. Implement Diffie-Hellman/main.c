@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "../../include/sha1.h"
 #include "../../include/diffie_hellman.h"
 
 #define DEBUG 0
@@ -69,8 +70,8 @@ int main(){
 
 	session_key = session_key_a;
 
-	dh_sha1_session_key(&session_key_hash, session_key);
-	printf("Session key hash: "); hex_print(session_key_hash, MD4_DIGEST_SIZE); printf("\n");
+	apnum_sha1(&session_key_hash, session_key);
+	printf("Session key hash: "); hex_print(session_key_hash, 16); printf("\n");
 
 	free(session_key_hash);
 

@@ -2,8 +2,6 @@
 #define DIFFIE_HELLMAN_H
 
 #include "arbitrary_precision.h"
-#include "md4.h"
-#include "sha1.h"
 
 struct dh_keypair {
 	apnum_ptr private_key;
@@ -26,11 +24,5 @@ int dh_start_session(dh_keypair_ptr pair_a, dh_keypair_ptr pair_b, apnum_ptr p, 
 
 /* Get the session key from your own private key and the other side's public key. */
 int dh_get_session_key(apnum_ptr session_key, apnum_ptr private_key, apnum_ptr received_public_key, apnum_ptr p);
-
-/* Get a 128-bit key from the session key. */
-int dh_md4_session_key(unsigned char **hash_ptr, apnum_ptr session_key);
-
-/* Get a 160-bit key from the session key, */
-int dh_sha1_session_key(unsigned char **hash_ptr, apnum_ptr session_key);
 
 #endif
