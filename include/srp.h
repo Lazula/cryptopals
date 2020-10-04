@@ -60,6 +60,8 @@ void free_srp_client(srp_client c);
 void copy_srp_paramset(srp_paramset out, srp_paramset in);
 void set_srp_parameters(srp_paramset out, apnum_ptr N, apnum_ptr g, apnum_ptr k, char *I, char *P);
 
+apnum_ptr srp_generate_x(char *password, char *salt);
+
 /* Define each stage of negotiation separately. */
 
 /* Set up pre-negotiated parameters. */

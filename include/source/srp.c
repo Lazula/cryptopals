@@ -114,6 +114,22 @@ void copy_srp_paramset(srp_paramset out, srp_paramset in){
 	strcpy(out -> P, in -> P);
 }
 
+apnum_ptr srp_generate_x(char *password, char *salt){
+	unsigned char *xH_raw = NULL;
+	char *xH = NULL;
+	apnum_ptr x;
+
+	key_prefix_sha256(&xH_raw, (unsigned char *) password, strlen(password), \
+				   (unsigned char *) salt, strlen(salt));
+	sha256_hash_to_string(&xH, xH_raw);
+	free(xH_raw);
+
+	x = new_apnum();
+	decode_apnum_from_hex(x, xH);
+	free(xH);
+
+	return x;
+}
 
 /* Define each stage of negotiation separately. */
 
@@ -127,8 +143,6 @@ void srp_negotiate_parameters(srp_client client, srp_server server, srp_paramset
 void srp_generate_server_info(srp_server server){
 	apnum_ptr r;
 	apnum_ptr x;
-	unsigned char *xH_raw = NULL;
-	char *xH = NULL;
 
 	apnum_randinit();
 
@@ -146,14 +160,7 @@ void srp_generate_server_info(srp_server server){
 	printf("server salt string: %s\n", server -> salt);
 	#endif
 
-	key_prefix_sha256(&xH_raw, (unsigned char *) server -> params -> P, strlen(server -> params -> P), \
-			  (unsigned char *) server -> salt, strlen(server -> salt));
-	sha256_hash_to_string(&xH, xH_raw);
-	free(xH_raw);
-
-	x = new_apnum();
-	decode_apnum_from_hex(x, xH);
-	free(xH);
+	x = srp_generate_x(server -> params -> P, server -> salt);
 
 	#if DEBUG_GENERATE_SERVER_INFO
 	printf("server x: "); print_apnum_as_hex(x); printf("\n");
@@ -266,20 +273,11 @@ void srp_compute_u_server(srp_server server){
 
 /* Compute S/K */
 void srp_compute_session_key_client(srp_client client){
-	unsigned char *xH_raw = NULL;
-	char *xH = NULL;
 	apnum_ptr x;
 	apnum_ptr temp1;
 	apnum_ptr temp2;
 
-	key_prefix_sha256(&xH_raw, (unsigned char *) client -> params -> P, strlen(client -> params -> P), \
-			  (unsigned char *) client -> salt, strlen(client -> salt));
-	sha256_hash_to_string(&xH, xH_raw);
-	free(xH_raw);
-
-	x = new_apnum();
-	decode_apnum_from_hex(x, xH);
-	free(xH);
+	x = srp_generate_x(client -> params -> P, client -> salt);
 
 	/* temp1 = B - k * pow(g, x) */
 	temp1 = new_apnum();
