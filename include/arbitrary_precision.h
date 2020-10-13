@@ -42,6 +42,7 @@ int apnum_add(apnum_ptr out, apnum_ptr a, apnum_ptr b);
 int apnum_sub(apnum_ptr out, apnum_ptr a, apnum_ptr b);
 int apnum_mul(apnum_ptr out, apnum_ptr a, apnum_ptr b);
 int apnum_div(apnum_ptr quotient, apnum_ptr remainder, apnum_ptr dividend, apnum_ptr divisor);
+int apnum_root(apnum_ptr out, apnum_ptr in, uint32_t n);
 
 /* comparison */
 int apnum_cmp(apnum_ptr a, apnum_ptr b);

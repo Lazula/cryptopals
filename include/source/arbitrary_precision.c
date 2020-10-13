@@ -89,6 +89,12 @@ int apnum_div(apnum_ptr quotient, apnum_ptr remainder, apnum_ptr dividend, apnum
 	return 0;
 }
 
+int apnum_root(apnum_ptr out, apnum_ptr in, uint32_t n){
+	if(!out || !in) return 1;
+	mpz_root(*out, *in, n);
+	return 0;
+}
+
 int apnum_mod(apnum_ptr out, apnum_ptr in, apnum_ptr mod){
 	mpz_mod(*out, *in, *mod);
 	return 0;
