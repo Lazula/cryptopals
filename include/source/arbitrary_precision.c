@@ -105,6 +105,10 @@ int apnum_modexp(apnum_ptr out, apnum_ptr base, apnum_ptr exp, apnum_ptr mod){
 	return 0;
 }
 
+int apnum_invmod(apnum_ptr out, apnum_ptr numerator, apnum_ptr denominator){
+	return mpz_invert(*out, *numerator, *denominator);
+}
+
 void apnum_randinit(){
 	/* Not freeing the state is not considered a memory leak,
 	 * as it may be used at any point before program termination,
@@ -116,6 +120,18 @@ void apnum_randinit(){
 
 int apnum_rand(apnum_ptr out, apnum_ptr mod){
 	mpz_urandomm(*out, apnum_randstate, *mod);
+	return 0;
+}
+
+int apnum_randprime(apnum_ptr out, apnum_ptr mod){
+	apnum_ptr temp;
+
+	temp = new_apnum();
+
+	mpz_urandomm(*temp, apnum_randstate, *mod);
+	mpz_nextprime(*out, *temp);
+
+	free_apnum(temp);
 	return 0;
 }
 

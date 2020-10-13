@@ -49,9 +49,11 @@ int apnum_cmp(apnum_ptr a, apnum_ptr b);
 /* modular arithmetic */
 int apnum_mod(apnum_ptr out, apnum_ptr in, apnum_ptr mod);
 int apnum_modexp(apnum_ptr out, apnum_ptr base, apnum_ptr exp, apnum_ptr mod);
+int apnum_invmod(apnum_ptr out, apnum_ptr numerator, apnum_ptr denominator);
 
 /* random generation */
 void apnum_randinit();
 int apnum_rand(apnum_ptr out, apnum_ptr mod);
+int apnum_randprime(apnum_ptr out, apnum_ptr mod);
 
 #endif
